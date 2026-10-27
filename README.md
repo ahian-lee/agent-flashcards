@@ -1,5 +1,6 @@
 # Agent 闪卡 · 像背单词一样学 Agent
 
+> **在线安装地址**：<https://ahian-lee.github.io/agent-flashcards/>（手机浏览器打开 → 添加到主屏幕）  
 > 移动优先的 Agent 知识闪卡 PWA：**问答 / 选择题 / 填空** 三种卡型，**FSRS-6 间隔重复**，可安装、可离线，学习进度只存本机。  
 > 8 个 deck · 204 张卡 · 全部中文 · 每张卡带可核验出处。
 
@@ -18,6 +19,8 @@
 | **可运行 App** | [`app/`](app/README.md) | Vite 8 + React 19 + TS + ts-fsrs 5.4.2 + Dexie + PWA；83 单测 + 51 项浏览器冒烟 |
 | **题库内容** | [`content/`](content/README.md) | 8 个 deck / 204 卡（Agent 3 卷 + 大模型面试 5 卷）；schema、校验脚本、选题覆盖表、出处清单 |
 | **来源地图** | [docs/research/llm-interview-source-map.md](docs/research/llm-interview-source-map.md) | 索引页识别、五卷划分、专题文章清单、制作规则 |
+| **覆盖报告** | [docs/research/llm-coverage.md](docs/research/llm-coverage.md) | 五卷逐章覆盖表、每章对应卡片、有意取舍清单 |
+| **手机安装** | [docs/04-install-mobile.md](docs/04-install-mobile.md) | iOS/Android 安装步骤、局域网自托管、常见问题 |
 | **截图证据** | [docs/screenshots/](docs/screenshots/) | 首页、学习正反面、选择题、填空、统计、深色设置、会话小结、离线 |
 
 ---
@@ -164,6 +167,10 @@ npm run smoke         # 51 项 Playwright 冒烟（系统 Chrome）
 
 ## 7. 手机端与三端策略
 
+- **在线地址**：<https://ahian-lee.github.io/agent-flashcards/>（GitHub Pages，已配置 Actions 自动部署）
+- **安装步骤（iOS）**：Safari 打开 → 分享 → 添加到主屏幕 → 添加
+- **安装步骤（Android）**：Chrome 打开 → ⋮ → 安装应用 / 添加到主屏幕
+- 详细步骤、局域网自托管与常见问题见 [docs/04-install-mobile.md](docs/04-install-mobile.md)
 - **V1（已交付）**：响应式 PWA。手机浏览器即开即用；iOS「添加到主屏幕」、Android「安装应用」；桌面浏览器居中布局 + 键盘（空格翻面、1–4 评分）；
 - **数据互通**：无账号，本地 IndexedDB；跨设备用「导出 / 导入 JSON」迁移（设置页）；
 - **Phase 2**：账号 + 云同步（Supabase / Cloudflare D1，按卡片 LWW + 日志 append-only）；
