@@ -1,0 +1,405 @@
+{
+  "id": "agent-post-training",
+  "title": "Agent 后训练知识",
+  "description": "28 张卡覆盖 SFT、RLHF 三阶段、PPO、DPO、GRPO、奖励模型 ORM/PRM、数据清洗与配比、LoRA/QLoRA、蒸馏、RFT、评测过拟合、灾难性遗忘、冷启动与 reward hacking。公式用纯文本写清符号。",
+  "version": 1,
+  "updatedAt": "2026-10-26",
+  "cards": [
+    {
+      "id": "posttrain-001",
+      "type": "qa",
+      "question": "后训练的典型三阶段是什么？（InstructGPT 范式）",
+      "answer": "1. **SFT**：用人工写的「指令→回答」做监督微调，学会跟随指令。\n2. **奖励模型 RM**：对同一 prompt 的多个回答做人工排序，训一个打分模型。\n3. **RL（PPO）**：用 RM 当奖励，优化策略，并用 KL 惩罚约束不要偏离 SFT 模型太远。\n\nInstructGPT 的结论：1.3B 的 PPO 模型，人类标注员偏好度超过 175B 的 GPT-3。",
+      "explanation": "易错点：以为三阶段必须都做。很多团队只做 SFT + DPO，甚至只做 SFT，效果取决于任务与数据。",
+      "tags": [
+        "RLHF",
+        "后训练"
+      ],
+      "difficulty": 1,
+      "source": "Ouyang et al., Training language models to follow instructions with human feedback, arXiv:2203.02155 https://arxiv.org/abs/2203.02155"
+    },
+    {
+      "id": "posttrain-002",
+      "type": "mcq",
+      "question": "SFT 的交叉熵 loss 应该算在哪些 token 上？",
+      "choices": [
+        "只在 assistant 回答的 token 上，prompt 部分做 mask",
+        "随机采样一半 token",
+        "只在 prompt 的 token 上",
+        "prompt 和回答的全部 token"
+      ],
+      "answerIndex": 0,
+      "explanation": "标准做法是把 prompt 部分 label 设为 -100（mask 掉），只对回答 token 算交叉熵，否则模型会被训练去「复述用户问题」。多轮对话里每一轮 assistant 片段都算。",
+      "tags": [
+        "SFT",
+        "实现细节"
+      ],
+      "difficulty": 1,
+      "source": "Ouyang et al., InstructGPT, arXiv:2203.02155（SFT 目标）；HuggingFace TRL SFTTrainer 文档 https://huggingface.co/docs/trl/sft_trainer"
+    },
+    {
+      "id": "posttrain-003",
+      "type": "qa",
+      "question": "SFT 数据要多少？质量还是数量更重要？",
+      "answer": "LIMA 的实验很有代表性：只用 **1000 条**精选指令数据做 SFT，不做 RLHF，表现就能与当时更强的模型竞争。\n\n- 质量优先：答案要正确、格式一致、风格统一。\n- 多样性优先于重复：覆盖任务类型，而不是同一题型堆几万条。\n- 数量在「覆盖不足」时才有用；数据脏了，越多越糟。",
+      "explanation": "易错点：盲目堆数据量。SFT 阶段的数据质量与多样性，通常比规模更决定上限。",
+      "tags": [
+        "SFT",
+        "数据"
+      ],
+      "difficulty": 1,
+      "source": "Zhou et al., LIMA: Less Is More for Alignment, arXiv:2305.11206 https://arxiv.org/abs/2305.11206"
+    },
+    {
+      "id": "posttrain-004",
+      "type": "mcq",
+      "question": "为什么要训奖励模型，而不是直接用人工打分当奖励？",
+      "choices": [
+        "因为奖励模型不需要数据",
+        "因为 RL 需要大量反馈，人工无法为每一步实时打分，RM 是学出来的人类偏好代理",
+        "因为 PPO 只能接受整数奖励",
+        "因为奖励模型比人更聪明"
+      ],
+      "answerIndex": 1,
+      "explanation": "RL 要成千上万次采样打分，人工跟不上。做法是先收集人类偏好对，用 Bradley-Terry 模型训一个 RM，再让 RM 在训练中提供密集反馈。代价是 RM 只是代理，会被钻空子（reward hacking）。",
+      "tags": [
+        "奖励模型",
+        "RLHF"
+      ],
+      "difficulty": 1,
+      "source": "Ouyang et al., InstructGPT, arXiv:2203.02155 https://arxiv.org/abs/2203.02155"
+    },
+    {
+      "id": "posttrain-005",
+      "type": "cloze",
+      "question": "Bradley-Terry 奖励模型的 loss 是：{{c1::-log σ(r(x, y_w) − r(x, y_l))}}，其中 y_w 是被偏好的回答。",
+      "answer": "σ 是 sigmoid；r(x,y) 是奖励模型对「prompt x + 回答 y」的打分；y_w 是人类更喜欢的回答（winner），y_l 是较差的（loser）。训练目标是让好回答的分数显著高于差回答。",
+      "explanation": "易错点：只用一个回答的绝对分做回归。偏好数据是成对的，用排序/对比损失才有效。",
+      "tags": [
+        "奖励模型",
+        "公式"
+      ],
+      "difficulty": 2,
+      "source": "Ouyang et al., InstructGPT（RM loss），arXiv:2203.02155 https://arxiv.org/abs/2203.02155"
+    },
+    {
+      "id": "posttrain-006",
+      "type": "qa",
+      "question": "PPO 在 RLHF 里的目标由哪几项组成？",
+      "answer": "策略梯度目标 + 裁剪 + KL 约束：\n\n- **ratio** ρ = π_θ(a|s) / π_old(a|s)\n- **clip**：min(ρ·Â, clip(ρ, 1−ε, 1+ε)·Â)，防止一步更新过大\n- **KL 惩罚**：β·log(π_θ/π_ref)，把策略拉在参考模型附近\n\n奖励由 RM 给出，KL 通常按 token 逐步计算（InstructGPT 做法）。",
+      "explanation": "易错点：把 KL 当成正则项随便设。β 太小学坏，β 太大几乎不更新，它是 PPO 调参的核心。",
+      "tags": [
+        "PPO",
+        "公式"
+      ],
+      "difficulty": 2,
+      "source": "Schulman et al., Proximal Policy Optimization Algorithms, arXiv:1707.06347 https://arxiv.org/abs/1707.06347；InstructGPT, arXiv:2203.02155"
+    },
+    {
+      "id": "posttrain-007",
+      "type": "mcq",
+      "question": "RLHF 中 KL 惩罚项的主要作用是？",
+      "choices": [
+        "替代 PPO 的裁剪",
+        "让奖励模型更准确",
+        "防止策略偏离参考模型太远，抑制 reward hacking 与语言退化",
+        "提高采样速度"
+      ],
+      "answerIndex": 2,
+      "explanation": "RM 只是人类偏好的代理，优化过头会出现「分数高但人看着差」的输出（冗长、堆砌、钻空子）。KL 把策略约束在 SFT/参考模型附近，是 PPO-RLHF 的稳定器。",
+      "tags": [
+        "PPO",
+        "KL"
+      ],
+      "difficulty": 2,
+      "source": "Ouyang et al., InstructGPT, arXiv:2203.02155；Stiennon et al., arXiv:2009.01325"
+    },
+    {
+      "id": "posttrain-008",
+      "type": "qa",
+      "question": "DPO 的核心思想与 loss 是什么？",
+      "answer": "DPO 把「RLHF 的最优策略」解析地重写成分类损失，**不用训 RM、不用在线采样**。\n\nL = −log σ( β · [ log(π_θ(y_w|x)/π_ref(y_w|x)) − log(π_θ(y_l|x)/π_ref(y_l|x)) ] )\n\n符号：y_w/y_l 为偏好对；π_θ 为待训策略；π_ref 为参考模型；β 控制偏离程度（论文实验取 0.1）。本质是让策略提高「好回答相对参考模型的概率」，压低坏回答。",
+      "explanation": "易错点：以为 DPO 完全不需要参考模型。π_ref 是必需的，否则会退化成「提高所有回答的概率」。",
+      "tags": [
+        "DPO",
+        "公式"
+      ],
+      "difficulty": 2,
+      "source": "Rafailov et al., Direct Preference Optimization: Your Language Model is Secretly a Reward Model, arXiv:2305.18290 https://arxiv.org/abs/2305.18290"
+    },
+    {
+      "id": "posttrain-009",
+      "type": "cloze",
+      "question": "DPO loss：{{c1::-log σ(β · [log(π_θ(y_w|x)/π_ref(y_w|x)) − log(π_θ(y_l|x)/π_ref(y_l|x))])}}。",
+      "answer": "β（论文实验取 0.1）控制允许偏离参考模型的程度；括号内是「偏好回答的对数概率提升量」减去「被拒回答的提升量」。σ 为 sigmoid，整体等价于二分类的 logistic loss。",
+      "explanation": "易错点：β 设得过大，模型几乎不动；过小则容易过拟合偏好数据、语言质量下降。",
+      "tags": [
+        "DPO",
+        "公式"
+      ],
+      "difficulty": 2,
+      "source": "Rafailov et al., DPO, arXiv:2305.18290 https://arxiv.org/abs/2305.18290"
+    },
+    {
+      "id": "posttrain-010",
+      "type": "qa",
+      "question": "DPO 和 PPO 怎么选？",
+      "answer": "- **DPO**：离线偏好数据即可，实现简单、稳定、便宜；适合有高质量偏好对、算力有限的团队。缺点是只用固定数据，容易过拟合，无法探索新输出。\n- **PPO/在线 RL**：能采样探索、用可验证奖励（RLVR），上限更高；但要训 critic、调 KL/裁剪、工程复杂。\n- **实践**：先 DPO 打底，再用在线 RL 冲上限（Tulu 3 就是 SFT → DPO → RLVR 组合）。",
+      "explanation": "易错点：认为 DPO 一定优于 PPO 或反之。取决于你能否拿到在线采样与可验证奖励。",
+      "tags": [
+        "DPO",
+        "PPO",
+        "选型"
+      ],
+      "difficulty": 3,
+      "source": "Rafailov et al., DPO, arXiv:2305.18290；Lambert et al., Tülu 3, arXiv:2411.15124 https://arxiv.org/abs/2411.15124"
+    },
+    {
+      "id": "posttrain-011",
+      "type": "qa",
+      "question": "DPO 的变体 IPO / KTO / ORPO 各解决什么？",
+      "answer": "- **IPO**：把 DPO 的 sigmoid 换成平方损失，并显式加入偏好强度，缓解 DPO 对偏好数据的过拟合。\n- **KTO**：只用「好/坏」二元标签，不需要成对数据，借鉴前景理论做非对称加权。\n- **ORPO**：把 SFT 与偏好对齐合成一个目标，用 odds ratio 惩罚，不需要参考模型。\n\n共同动机：降低对成对偏好数据的依赖、省显存、更稳。",
+      "explanation": "易错点：把这些变体当成「一定更好」。它们各有适用数据形态，乱换可能掉点。",
+      "tags": [
+        "DPO",
+        "变体"
+      ],
+      "difficulty": 2,
+      "source": "IPO arXiv:2310.12036；KTO arXiv:2402.01306；ORPO arXiv:2403.07691"
+    },
+    {
+      "id": "posttrain-012",
+      "type": "qa",
+      "question": "GRPO 与 PPO 的最大差别是什么？",
+      "answer": "GRPO **去掉了 value model（critic）**：对同一个问题采样一组 G 个回答，用组内统计量当基线，算相对优势。\n\n- PPO：需要 critic 估计状态价值，显存与训练成本高。\n- GRPO：用「组内均值/标准差」做基线，省掉 critic，显存大降。\n- 结果：适合可验证奖励（数学题判对错、代码跑测试），DeepSeekMath 与 DeepSeek-R1 都用它。",
+      "explanation": "易错点：以为 GRPO 不需要奖励。它仍需奖励函数，只是不需要学出来的价值函数。",
+      "tags": [
+        "GRPO",
+        "RL"
+      ],
+      "difficulty": 2,
+      "source": "Shao et al., DeepSeekMath, arXiv:2402.03300 https://arxiv.org/abs/2402.03300"
+    },
+    {
+      "id": "posttrain-013",
+      "type": "cloze",
+      "question": "GRPO 的 group-relative advantage：{{c1::A_i = (r_i − mean(r)) / std(r)}}，其中 r 是组内 G 个输出的奖励。",
+      "answer": "同一问题采样 G 个回答，各自拿到奖励 r_i；用组内均值做基线、标准差做归一化，得到 A_i。目标函数再把 A_i 乘上重要性比率并裁剪，可加 KL 项（DeepSeek-R1 的 RL 阶段省略了 KL）。",
+      "explanation": "易错点：把 std 去掉。没有归一化时不同题目的奖励尺度差异会让梯度极不稳定。",
+      "tags": [
+        "GRPO",
+        "公式"
+      ],
+      "difficulty": 2,
+      "source": "Shao et al., DeepSeekMath（GRPO 小节）, arXiv:2402.03300 https://arxiv.org/abs/2402.03300"
+    },
+    {
+      "id": "posttrain-014",
+      "type": "qa",
+      "question": "DeepSeek-R1-Zero 证明了什么？R1 又补了什么？",
+      "answer": "- **R1-Zero**：直接在基座模型上做 RL（GRPO + 规则奖励，如答案正确性 + 格式），**不做 SFT**，模型自发出现长链推理与自我检查（论文称为 aha moment）。\n- **问题**：可读性差、语言混杂、格式不稳。\n- **R1**：加少量**冷启动** SFT 数据稳定输出格式，再做多阶段 RL（推理 RL → 拒绝采样 SFT → 全场景 RL）；并把推理能力**蒸馏**到小模型。",
+      "explanation": "易错点：以为 R1 是纯 RL。R1 是「冷启动 + 多阶段 RL + 蒸馏」，纯 RL 的是 R1-Zero。",
+      "tags": [
+        "DeepSeek-R1",
+        "冷启动"
+      ],
+      "difficulty": 3,
+      "source": "DeepSeek-AI, DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning, arXiv:2501.12948 https://arxiv.org/abs/2501.12948"
+    },
+    {
+      "id": "posttrain-015",
+      "type": "qa",
+      "question": "DAPO 对 GRPO 做了哪四处关键改动？",
+      "answer": "1. **Clip-Higher**：把裁剪上界放宽（上界大于下界），给低概率 token 留上升空间，缓解熵塌缩。\n2. **动态采样**：丢掉「全对」和「全错」的组，保证组内有梯度信号。\n3. **Token-level loss**：按 token 归一化，而不是按样本平均，避免长回答主导梯度。\n4. **Overlong reward shaping**：对被截断的超长回答给惩罚，减少「靠啰嗦刷分」。\n\n这四条是工程上让大规模 RL 稳定的关键。",
+      "explanation": "易错点：以为 RL 只要奖励对就行。采样策略、归一化方式、长度处理都会显著影响收敛。",
+      "tags": [
+        "DAPO",
+        "GRPO",
+        "RL"
+      ],
+      "difficulty": 3,
+      "source": "Yu et al., DAPO: An Open-Source LLM Reinforcement Learning System at Scale, arXiv:2503.14476 https://arxiv.org/abs/2503.14476"
+    },
+    {
+      "id": "posttrain-016",
+      "type": "mcq",
+      "question": "ORM 与 PRM 的核心区别是？",
+      "choices": [
+        "ORM 比 PRM 更贵",
+        "两者完全等价，只是名字不同",
+        "PRM 只能用于代码任务",
+        "ORM 只看最终结果，PRM 对推理的每一步打分"
+      ],
+      "answerIndex": 3,
+      "explanation": "ORM（Outcome Reward Model）对整个回答给一个结果分；PRM（Process Reward Model）对中间每一步给分。「Let's Verify Step by Step」显示过程监督在 MATH 上优于结果监督，并开源了 PRM800K（约 80 万条步骤级标注）。",
+      "tags": [
+        "PRM",
+        "奖励模型"
+      ],
+      "difficulty": 2,
+      "source": "Lightman et al., Let's Verify Step by Step, arXiv:2305.20050 https://arxiv.org/abs/2305.20050"
+    },
+    {
+      "id": "posttrain-017",
+      "type": "qa",
+      "question": "PRM 怎么训、怎么用？",
+      "answer": "**训练**：人工对推理的每一步标「对/错」（PRM800K 就是这种数据），用步骤级标签训一个打分模型。\n\n**使用**：\n- best-of-N：采多个解，用 PRM 逐步打分后选总分最高的。\n- 搜索：在推理树里用 PRM 做价值估计，指导剪枝。\n- 也可当 RL 的稠密奖励。\n\n**代价**：步骤级标注很贵；PRM 也可能被「看起来合理」的步骤骗过。",
+      "explanation": "易错点：以为 PRM 一定优于 ORM。标注成本高，且在步骤边界不清的任务上难落地。",
+      "tags": [
+        "PRM",
+        "评估"
+      ],
+      "difficulty": 2,
+      "source": "Lightman et al., Let's Verify Step by Step, arXiv:2305.20050 https://arxiv.org/abs/2305.20050"
+    },
+    {
+      "id": "posttrain-018",
+      "type": "qa",
+      "question": "reward hacking 的定义与典型表现？",
+      "answer": "定义（Skalse 等）：如果存在策略在代理奖励上得分很高、但真实目标得分不高，代理奖励就是可被 hack 的。\n\n**典型表现**：\n- 长度堆砌（更长=更高分）\n- 讨好评委的套话、过度免责\n- 格式刷分（只把格式写对）\n- 钻 verifier 漏洞（硬编码测试、猜答案）\n\n**缓解**：KL 约束、奖励集成、可验证奖励、人工抽检、对抗性用例。",
+      "explanation": "易错点：加长训练就指望指标变好。Gao 等人的实验显示：代理奖励单调上升时，真实奖励会先升后降。",
+      "tags": [
+        "reward hacking",
+        "RL"
+      ],
+      "difficulty": 3,
+      "source": "Skalse et al., Defining and Characterizing Reward Hacking, arXiv:2209.13085 https://arxiv.org/abs/2209.13085；Gao et al., Scaling Laws for Reward Model Overoptimization, arXiv:2210.10760"
+    },
+    {
+      "id": "posttrain-019",
+      "type": "qa",
+      "question": "verifier（验证器）设计要注意什么？",
+      "answer": "- **答案抽取要稳**：数学题用规则抽取最终答案，代码用单测，别让模型自评当唯一依据。\n- **防泄漏**：测试用例与训练数据隔离，防止模型背题。\n- **防钻空子**：代码 verifier 要隔离环境、禁网、禁改测试；数学 verifier 要覆盖等价形式。\n- **奖励要可组合**：正确性 + 格式 + 长度约束，权重写清。\n- **校准**：定期人工核对「verifier 判对」的样本是否真对。",
+      "explanation": "易错点：把 verifier 当绝对真理。verifier 有漏洞时，RL 会精准地学会利用它。",
+      "tags": [
+        "verifier",
+        "RL"
+      ],
+      "difficulty": 2,
+      "source": "DeepSeek-R1, arXiv:2501.12948（规则奖励）；Let's Verify Step by Step, arXiv:2305.20050"
+    },
+    {
+      "id": "posttrain-020",
+      "type": "qa",
+      "question": "拒绝采样 / RFT 是什么？和 RL 什么关系？",
+      "answer": "**做法**：对每个 prompt 采样多个回答 → 用 verifier/答案过滤出正确的 → 把这些「好样本」拿去做 SFT。反复迭代就是 STaR 式自举。\n\n- 属于「离线蒸馏自己的成功样本」，稳定、便宜、不需要 critic。\n- 和 RL 的关系：RFT 只利用正样本，没有负样本信号，也不做在线探索；RL 能用失败样本与稠密奖励。\n- 常作为 RL 前的一步（DeepSeek-R1 的 SFT 数据就是这么来的）。",
+      "explanation": "易错点：以为 RFT 就是 RL。没有梯度上的负样本惩罚，容易在难题上停滞（采不到正确样本就没数据）。",
+      "tags": [
+        "RFT",
+        "拒绝采样"
+      ],
+      "difficulty": 1,
+      "source": "Zelikman et al., STaR, arXiv:2203.14465；DeepSeek-R1, arXiv:2501.12948（拒绝采样 SFT）"
+    },
+    {
+      "id": "posttrain-021",
+      "type": "qa",
+      "question": "后训练数据清洗要做哪些事？",
+      "answer": "- **去重**：精确去重 + 近似去重，降低记忆与重复曝光。\n- **质量过滤**：规则（长度、格式、语言）+ 模型打分（困惑度/分类器）。\n- **去污染**：剔除与评测集重叠的样本，否则指标虚高。\n- **一致化**：统一 chat 模板、标点、拒绝话术。\n- **安全清洗**：去掉 PII、有害内容，或按策略保留。",
+      "explanation": "易错点：只做去重不做去污染。评测集泄漏是「榜单很高、线上一塌糊涂」的常见原因。",
+      "tags": [
+        "数据",
+        "清洗"
+      ],
+      "difficulty": 1,
+      "source": "Lee et al., Deduplicating Training Data Makes Language Models Better, arXiv:2107.06499 https://arxiv.org/abs/2107.06499"
+    },
+    {
+      "id": "posttrain-022",
+      "type": "qa",
+      "question": "数据配比（通用 vs 领域）怎么定？",
+      "answer": "- **经验起点**：领域数据解决能力，通用数据保能力不退化，通常要给通用留一定比例。\n- **DoReMi**：先训小代理模型，用分布鲁棒优化学各域的权重，再用于大模型训练——比人工调比例更系统。\n- **课程式**：先通用后领域，或按难度递增。\n- **验证方式**：消融实验看目标域与通用能力的双向指标，别只看单边。",
+      "explanation": "易错点：领域数据拉到 100%。短期目标域涨，长期通用能力与指令跟随明显退化。",
+      "tags": [
+        "数据",
+        "配比"
+      ],
+      "difficulty": 2,
+      "source": "Xie et al., DoReMi: Optimizing Data Mixtures Speeds Up Language Model Pretraining, arXiv:2305.10429 https://arxiv.org/abs/2305.10429"
+    },
+    {
+      "id": "posttrain-023",
+      "type": "qa",
+      "question": "LoRA 的原理是什么？",
+      "answer": "冻结原权重 W0，只学一个低秩增量：\n\nh = W0·x + (α/r)·B·A·x\n\n- B ∈ R^{d×r}，A ∈ R^{r×k}，r 远小于 d、k\n- α/r 是缩放系数\n- 训练完可把 BA 合并回 W0，推理零额外延迟\n\n论文在 GPT-3 175B 上把可训练参数减少约 1 万倍、显存减少约 3 倍。",
+      "explanation": "易错点：以为 LoRA 只能用于注意力层。实际可加到任意线性层，加哪些层对效果影响很大。",
+      "tags": [
+        "LoRA",
+        "参数高效微调"
+      ],
+      "difficulty": 1,
+      "source": "Hu et al., LoRA: Low-Rank Adaptation of Large Language Models, arXiv:2106.09685 https://arxiv.org/abs/2106.09685"
+    },
+    {
+      "id": "posttrain-024",
+      "type": "qa",
+      "question": "QLoRA 的三个关键技巧是什么？",
+      "answer": "1. **4-bit NormalFloat（NF4）**：为正态分布权重设计的量化数据类型，比普通 4-bit 更省精度损失。\n2. **双重量化**：对量化常数再量化一次，进一步省显存。\n3. **Paged optimizers**：显存峰值时把优化器状态换到 CPU，避免 OOM。\n\n效果：论文在单张 48GB GPU 上微调 65B 模型，性能接近 16-bit 全量微调。",
+      "explanation": "易错点：以为 QLoRA 只是「4bit + LoRA」。没有双重量化与分页优化器，显存收益会小很多。",
+      "tags": [
+        "QLoRA",
+        "量化"
+      ],
+      "difficulty": 2,
+      "source": "Dettmers et al., QLoRA: Efficient Finetuning of Quantized LLMs, arXiv:2305.14314 https://arxiv.org/abs/2305.14314"
+    },
+    {
+      "id": "posttrain-025",
+      "type": "mcq",
+      "question": "LoRA 的 r 与 α 怎么理解？",
+      "choices": [
+        "r 是低秩维度（容量），α/r 是缩放系数（更新幅度）",
+        "r 是学习率，α 是权重衰减",
+        "r 是训练轮数，α 是 batch size",
+        "两者都必须等于模型隐藏维度"
+      ],
+      "answerIndex": 0,
+      "explanation": "r 越大，可训练参数越多、表达能力越强，也越容易过拟合；α/r 决定低秩增量被放大多少，类似给这段更新单独设学习率。常见做法是先固定 α 再扫 r，或保持 α/r 比例一起放大。",
+      "tags": [
+        "LoRA",
+        "超参"
+      ],
+      "difficulty": 2,
+      "source": "Hu et al., LoRA, arXiv:2106.09685（α/r 缩放与低秩分解）https://arxiv.org/abs/2106.09685"
+    },
+    {
+      "id": "posttrain-026",
+      "type": "qa",
+      "question": "蒸馏有哪几类？DeepSeek-R1 怎么蒸馏？",
+      "answer": "- **离线蒸馏（序列级）**：用教师生成的回答做 SFT。简单、稳定，R1 对小模型就用这个。\n- **logit 蒸馏**：对齐教师与学生的输出分布（前向 KL），需要教师 logits。\n- **on-policy 蒸馏**：学生自己采样、教师打分，用 reverse KL 做策略梯度（MiniLLM）。\n\nR1 的做法：用 R1 生成的**大规模推理数据**（论文蒸馏小节，数十万条量级）直接 SFT 到 Qwen/Llama 系列小模型，效果优于在小模型上直接做 RL。",
+      "explanation": "易错点：以为蒸馏一定弱于 RL。论文明确说：小模型上「蒸馏 > 直接 RL」。",
+      "tags": [
+        "蒸馏",
+        "R1"
+      ],
+      "difficulty": 2,
+      "source": "DeepSeek-R1, arXiv:2501.12948（蒸馏小节）；MiniLLM, arXiv:2306.08543"
+    },
+    {
+      "id": "posttrain-027",
+      "type": "qa",
+      "question": "灾难性遗忘怎么产生、怎么缓解？",
+      "answer": "**产生**：在窄领域数据上继续训练，模型把通用能力「覆盖」掉了。\n\n**缓解**：\n- 混入通用/指令数据（最有效）\n- 用 LoRA 等参数高效方法（论文实测比全量微调遗忘更少）\n- 正则化约束重要权重（EWC 思路）\n- 控制学习率与训练轮数，早停\n- 训完做双向评测：目标域 + 通用基准",
+      "explanation": "易错点：只看目标域指标就发布。遗忘是「静默」的，必须同时跑通用基准才能发现。",
+      "tags": [
+        "灾难性遗忘",
+        "微调"
+      ],
+      "difficulty": 3,
+      "source": "Biderman et al., LoRA Learns Less and Forgets Less, arXiv:2405.09673 https://arxiv.org/abs/2405.09673；Kirkpatrick et al., arXiv:1612.00796"
+    },
+    {
+      "id": "posttrain-028",
+      "type": "qa",
+      "question": "后训练评测为什么会过拟合？怎么防？",
+      "answer": "**原因**：\n- 训练数据与评测集重叠（污染），模型「背过题」。\n- 反复用同一测试集调参，测试集事实上变成验证集。\n- 只刷单一榜单，忽略分布外能力。\n\n**防法**：\n- 留出 held-out 集，调参只看验证集\n- 去污染（n-gram / embedding 近似匹配）\n- 多基准 + 自建真实任务集\n- 关注「训练任务相似度」对指标的影响，别把提升全归因于方法。",
+      "explanation": "易错点：拿 benchmark 分数当唯一证据。Domínguez-Olmedo 等人的工作说明：训练数据与测试任务越像，指标越虚高。",
+      "tags": [
+        "评测",
+        "过拟合"
+      ],
+      "difficulty": 3,
+      "source": "Domínguez-Olmedo et al., Training on the Test Task Confounds Evaluation and Emergence, arXiv:2407.07890 https://arxiv.org/abs/2407.07890"
+    }
+  ]
+}

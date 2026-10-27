@@ -1,0 +1,402 @@
+{
+  "id": "agent-basics",
+  "title": "Agent 基础知识",
+  "description": "从「什么是 Agent」到评估与失败模式：28 张卡覆盖 Agent loop、ReAct、规划、工具调用、MCP、记忆、RAG、多 Agent、护栏、评估、成本延迟。适合面试前快速刷一遍。",
+  "version": 1,
+  "updatedAt": "2026-10-26",
+  "cards": [
+    {
+      "id": "basics-001",
+      "type": "qa",
+      "question": "Agent 与 workflow 的本质区别是什么？",
+      "answer": "Anthropic 的划分标准是「路径由谁决定」：\n\n- **Workflow**：LLM 与工具沿**预定义代码路径**执行，步骤写死在代码里。\n- **Agent**：LLM **自己决定**流程与工具用法，动态控制如何完成任务。\n- **判断法**：路径能否预先写死？能写死就优先 workflow（更可控、更便宜、更好测）。",
+      "explanation": "易错点：把所有「调用了 LLM 的系统」都叫 Agent。更严格的定义要求：模型自主决策 + 调用工具 + 从环境拿到反馈。",
+      "tags": [
+        "基础概念",
+        "workflow"
+      ],
+      "difficulty": 1,
+      "source": "Anthropic, Building effective agents（2024-12，2026 仍在维护）https://www.anthropic.com/engineering/building-effective-agents"
+    },
+    {
+      "id": "basics-002",
+      "type": "qa",
+      "question": "一个最小可用的 Agent 由哪几个部件组成？",
+      "answer": "六个部件：\n\n- **LLM**：决策与生成\n- **工具集**：可执行动作，带清晰 schema 与描述\n- **循环控制器**：把 observation 回灌模型，控制迭代与终止\n- **记忆/状态**：对话、任务进度、外部存储\n- **护栏**：权限、人工审批、预算（步数 / token / 金额）\n- **观测**：日志与 trace，用于排障\n\n去掉任何一个，系统都会在真实流量下出问题。",
+      "explanation": "易错点：漏掉「终止条件」。生产 Agent 必须有 max steps 与预算上限，否则会无限循环烧钱。",
+      "tags": [
+        "基础概念",
+        "架构"
+      ],
+      "difficulty": 1,
+      "source": "Anthropic, Building effective agents https://www.anthropic.com/engineering/building-effective-agents"
+    },
+    {
+      "id": "basics-003",
+      "type": "cloze",
+      "question": "ReAct 的单步循环是：{{c1::Thought}} → {{c2::Action}} → {{c3::Observation}}，直到给出 Final Answer。",
+      "answer": "Thought 先推理「下一步该干什么」，Action 调用工具，Observation 是工具返回的真实结果。关键是三者在**同一个上下文**里交错，让观察结果纠正后续推理。",
+      "explanation": "易错点：ReAct 不是新模型，而是一种 prompt / 轨迹格式；换任何支持 tool use 的模型都能实现。",
+      "tags": [
+        "ReAct"
+      ],
+      "difficulty": 1,
+      "source": "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, arXiv:2210.03629 https://arxiv.org/abs/2210.03629"
+    },
+    {
+      "id": "basics-004",
+      "type": "qa",
+      "question": "ReAct 相比纯 CoT 和纯 Action 强在哪？",
+      "answer": "- **纯 CoT**：只推理不查证，事实易错，拿不到实时信息。\n- **纯 Action**：只调工具不推理，缺计划，容易乱试。\n- **ReAct**：推理决定「查什么」，观察结果纠正「想错了什么」。论文在 HotpotQA、ALFWorld、WebShop 三类任务上都优于对应基线，且推理轨迹更可解释。",
+      "explanation": "易错点：以为 ReAct 一定比 CoT 强。工具不可用或任务纯推理时，CoT 更省 token。",
+      "tags": [
+        "ReAct",
+        "推理"
+      ],
+      "difficulty": 2,
+      "source": "Yao et al., ReAct, arXiv:2210.03629 https://arxiv.org/abs/2210.03629"
+    },
+    {
+      "id": "basics-005",
+      "type": "qa",
+      "question": "Plan-and-Execute 与 ReAct 的核心取舍是什么？",
+      "answer": "- **先规划后执行**：一次性出计划再逐步做，可并行、可人工审阅、token 更省；但计划错了会整条跑偏。\n- **ReAct 边做边想**：适应性强、能应对意外；但步数多、延迟高、容易绕圈。\n- **工程折中**：先出计划并把计划当作**可修改的状态**，执行中按需 replan，而不是一次定死。",
+      "explanation": "易错点：把「计划」写进 system prompt 就以为能约束模型。计划要落成显式状态（文件 / 变量），每步校验是否偏离。",
+      "tags": [
+        "规划",
+        "ReAct"
+      ],
+      "difficulty": 2,
+      "source": "Plan-and-Solve Prompting, arXiv:2305.04091 https://arxiv.org/abs/2305.04091；ReAct, arXiv:2210.03629"
+    },
+    {
+      "id": "basics-006",
+      "type": "qa",
+      "question": "CoT（思维链）为什么有效，什么时候反而有害？",
+      "answer": "- **做法**：让模型先写中间推理步骤再给答案（few-shot 示例或「一步一步想」）。\n- **有效**：多步算术、常识推理、符号操作；能力随模型规模增大而涌现。\n- **有害**：简单检索题白烧 token；延迟敏感场景；推理链可能「看着对、结论错」，还会给错误答案披上可信外衣。",
+      "explanation": "易错点：把 CoT 当成万能增强。对事实类问题，先检索再推理比硬想更可靠。",
+      "tags": [
+        "CoT",
+        "提示工程"
+      ],
+      "difficulty": 1,
+      "source": "Wei et al., Chain-of-Thought Prompting Elicits Reasoning in Large Language Models, arXiv:2201.11903 https://arxiv.org/abs/2201.11903"
+    },
+    {
+      "id": "basics-007",
+      "type": "mcq",
+      "question": "ToT（Tree of Thoughts）相比 CoT 增加的核心能力是？",
+      "choices": [
+        "对多个候选思路做搜索、评估与回溯",
+        "把 CoT 轨迹蒸馏进更小的模型",
+        "把推理链写得更长，避免被截断",
+        "用外部工具替代模型自身推理"
+      ],
+      "answerIndex": 0,
+      "explanation": "ToT 把「一步思考」当成可搜索的节点：生成多个候选、让模型自评打分、用 BFS/DFS 回溯。论文中 Game of 24 上 GPT-4 + ToT 成功率约 74%，CoT 约 4%——代价是 token 与延迟成倍增加。",
+      "tags": [
+        "ToT",
+        "推理"
+      ],
+      "difficulty": 2,
+      "source": "Yao et al., Tree of Thoughts: Deliberate Problem Solving with Large Language Models, arXiv:2305.10601 https://arxiv.org/abs/2305.10601"
+    },
+    {
+      "id": "basics-008",
+      "type": "qa",
+      "question": "Function Calling 的一次完整往返是怎样的？",
+      "answer": "1. 请求里带 **tools**（名字、描述、参数 JSON Schema）\n2. 模型返回 **tool_calls**（函数名 + 参数），它自己不执行\n3. 你的代码**校验参数**后执行\n4. 把结果作为工具消息，按 call_id 回传\n5. 模型基于结果继续调用或给最终答案\n\n执行权始终在你手里，模型只是「提议调用」。",
+      "explanation": "易错点：直接拿模型给的参数去查库。模型会给出错误类型、编造 ID、跳过必填项，必须做 schema 校验与业务校验。",
+      "tags": [
+        "工具调用",
+        "Function Calling"
+      ],
+      "difficulty": 2,
+      "source": "OpenAI, Function calling 指南 https://platform.openai.com/docs/guides/function-calling"
+    },
+    {
+      "id": "basics-009",
+      "type": "mcq",
+      "question": "模型一次返回多个 tool_calls（并行调用），正确处理是？",
+      "choices": [
+        "把多个调用合并成一个执行",
+        "每个 call_id 都执行并按 id 回填结果，失败的也要回传错误",
+        "只执行第一个，其余丢弃",
+        "让模型重新只发一个调用"
+      ],
+      "answerIndex": 1,
+      "explanation": "缺任何一个 call_id 的结果，模型都无法对齐，后续推理会全错。可并发执行以压低延迟，但结果必须一一回填；有依赖关系的调用不能并行，要等上一轮结果。失败也要以错误消息回传，而不是静默丢弃。",
+      "tags": [
+        "工具调用",
+        "并行"
+      ],
+      "difficulty": 2,
+      "source": "OpenAI, Function calling 指南（parallel function calling）https://platform.openai.com/docs/guides/function-calling"
+    },
+    {
+      "id": "basics-010",
+      "type": "qa",
+      "question": "MCP 解决什么问题？核心架构是什么？",
+      "answer": "- **问题**：N 个应用 × M 个工具要写 N×M 个适配器；MCP 把它变成 N+M（类似 LSP 之于编辑器）。\n- **架构**：Host（LLM 应用）→ Client（连接器）→ Server（提供能力）。\n- **协议**：JSON-RPC 2.0、有状态连接、能力协商。\n- **Server 三特性**：Resources / Prompts / Tools；Client 侧还有 Sampling、Roots、Elicitation。",
+      "explanation": "易错点：把 MCP 当成「又一个函数调用格式」。它的价值是生态复用与权限边界，而不只是调用协议。",
+      "tags": [
+        "MCP",
+        "协议"
+      ],
+      "difficulty": 2,
+      "source": "Model Context Protocol 规范（2025-06-18）https://modelcontextprotocol.io/specification/2025-06-18"
+    },
+    {
+      "id": "basics-011",
+      "type": "cloze",
+      "question": "MCP 当前规范定义两种标准传输：{{c1::stdio}}（客户端把 server 拉成子进程）与 {{c2::Streamable HTTP}}（取代旧的 HTTP+SSE）。",
+      "answer": "**stdio**：本地子进程，按行分隔的 JSON-RPC，stdout 只能写协议消息、日志走 stderr。\n**Streamable HTTP**：单一端点同时支持 POST/GET，可用 SSE 流式下发；规范要求服务端校验 Origin 以防 DNS rebinding。",
+      "explanation": "易错点：本地 server 往 stdout 打日志，直接把协议流污染成解析错误。",
+      "tags": [
+        "MCP",
+        "传输层"
+      ],
+      "difficulty": 2,
+      "source": "MCP 规范 · Transports（2025-06-18）https://modelcontextprotocol.io/specification/2025-06-18/basic/transports"
+    },
+    {
+      "id": "basics-012",
+      "type": "qa",
+      "question": "工具描述应该怎么写？（ACI 原则）",
+      "answer": "把工具当「给新同事的 docstring」写：\n\n- **说清用途与边界**：什么时候该用、什么时候别用\n- **参数防呆**（poka-yoke）：用绝对路径、枚举代替自由文本、必填项显式\n- **给示例**：典型调用长什么样\n- **错误信息可操作**：告诉模型「怎么改」，而不是只回「失败」\n- **职责单一**：描述互相重叠的工具，模型一定选错",
+      "explanation": "真实案例：Anthropic 做 SWE-bench Agent 时把文件工具改成只接受绝对路径后，路径类错误基本消失。",
+      "tags": [
+        "工具调用",
+        "工具设计"
+      ],
+      "difficulty": 2,
+      "source": "Anthropic, Building effective agents（附录 2：Prompt engineering your tools）https://www.anthropic.com/engineering/building-effective-agents"
+    },
+    {
+      "id": "basics-013",
+      "type": "qa",
+      "question": "Agent 的记忆通常分哪几层？",
+      "answer": "- **短期/工作记忆**：当前上下文窗口（对话、工具结果）\n- **长期记忆**：外部存储（向量库、KV、文件），按需检索\n- **情景记忆**：具体经历与轨迹（上次是怎么解决的）\n- **语义记忆**：提炼后的事实与知识\n- **程序性记忆**：技能与 SOP（如 Voyager 的可复用代码技能库）",
+      "explanation": "易错点：只做向量库就叫「有记忆」。真正难的是「什么时候写、什么时候读、什么时候忘」。",
+      "tags": [
+        "记忆",
+        "架构"
+      ],
+      "difficulty": 1,
+      "source": "MemGPT, arXiv:2310.08560（主上下文/外部上下文分层）；Generative Agents, arXiv:2304.03442（记忆流与反思）；Voyager, arXiv:2305.16291（程序性技能库）"
+    },
+    {
+      "id": "basics-014",
+      "type": "qa",
+      "question": "MemGPT 的核心思想是什么？",
+      "answer": "把 LLM 上下文当「内存」、外部存储当「磁盘」，做**虚拟上下文管理**：\n\n- **主上下文**：system prompt、工作上下文、FIFO 消息队列\n- **外部上下文**：可检索的档案与历史\n- **自我编辑**：模型通过函数调用自己读写、换页、检索\n\n它不是把窗口变大，而是让模型学会在有限窗口里换入换出。",
+      "explanation": "易错点：以为 MemGPT 是某个模型。它是「操作系统式」的记忆管理框架。",
+      "tags": [
+        "记忆",
+        "MemGPT"
+      ],
+      "difficulty": 2,
+      "source": "Packer et al., MemGPT: Towards LLMs as Operating Systems, arXiv:2310.08560 https://arxiv.org/abs/2310.08560"
+    },
+    {
+      "id": "basics-015",
+      "type": "qa",
+      "question": "Generative Agents 如何从记忆流里取记忆？",
+      "answer": "每条记忆带时间戳与重要性评分，检索时把三个信号加权：\n\n- **recency 新近度**：指数衰减，越近越高\n- **importance 重要性**：由模型给 1–10 分\n- **relevance 相关性**：与当前 query 的 embedding 相似度\n\n加权后取 top-k 注入 prompt；另有「反思」机制把零散记忆总结成更高层结论。",
+      "explanation": "易错点：只用向量相似度检索。没有时间衰减，几个月前的琐事会和刚发生的事同等权重。",
+      "tags": [
+        "记忆",
+        "检索"
+      ],
+      "difficulty": 2,
+      "source": "Park et al., Generative Agents: Interactive Simulacra of Human Behavior, arXiv:2304.03442 https://arxiv.org/abs/2304.03442"
+    },
+    {
+      "id": "basics-016",
+      "type": "mcq",
+      "question": "关于 RAG 在 Agent 中的定位，正确的是？",
+      "choices": [
+        "RAG 必须让检索器与生成器共用同一个向量模型",
+        "RAG 可以替代工具调用，因为检索本身也是一种行动",
+        "RAG 是「检索→拼进上下文」的一步，Agent 可自主决定何时检索、查什么",
+        "RAG 只适合静态文档，Agent 场景里不能用"
+      ],
+      "answerIndex": 2,
+      "explanation": "经典 RAG 是一次静态检索（DPR 检索 + 生成）；Agentic RAG 把检索变成可多次调用的工具，能改写 query、多轮查找。区别在「谁决定检索」和「能否迭代」。",
+      "tags": [
+        "RAG",
+        "检索"
+      ],
+      "difficulty": 2,
+      "source": "Lewis et al., Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks, arXiv:2005.11401 https://arxiv.org/abs/2005.11401"
+    },
+    {
+      "id": "basics-017",
+      "type": "qa",
+      "question": "RAG 常见的失败点与对应改法？",
+      "answer": "- **召回不到**：query 改写、混合检索（BM25 + 向量）、多路召回\n- **召回但排不对**：加 rerank、按语义段落切块而不是固定长度\n- **拼进去被忽略**：控制上下文长度、关键证据放开头/结尾、要求引用\n- **答非所问**：加「无依据就拒答」约束、回答后做引用校验\n\n先定位是「没召回到」还是「召回到了没用上」，两者改法完全不同。",
+      "explanation": "易错点：一上来就换更大的 embedding 模型。多数问题是切块与 rerank，不是召回模型。",
+      "tags": [
+        "RAG",
+        "排障"
+      ],
+      "difficulty": 3,
+      "source": "Lost in the Middle, arXiv:2307.03172 https://arxiv.org/abs/2307.03172；RAG, arXiv:2005.11401；Anthropic, Effective context engineering https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+    },
+    {
+      "id": "basics-018",
+      "type": "qa",
+      "question": "多 Agent 的三种常见协作拓扑是什么？",
+      "answer": "- **编排者-工作者**：主 Agent 拆任务、派子 Agent、汇总结果（研究类任务最常用）\n- **辩论 / 评估-优化**：多角色互评后收敛，或一个生成一个打分迭代\n- **Handoff**：把控制权连同上下文移交给专职 Agent（客服转专家、转人工）\n\n选型依据：子任务能否并行、是否需要独立上下文。",
+      "explanation": "易错点：把「多个角色写在同一个 prompt 里」也叫多 Agent。真正的多 Agent 有独立上下文与消息边界。",
+      "tags": [
+        "多 Agent",
+        "拓扑"
+      ],
+      "difficulty": 1,
+      "source": "Anthropic, Building effective agents（orchestrator-workers / evaluator-optimizer）https://www.anthropic.com/engineering/building-effective-agents；OpenAI Agents SDK（handoffs）https://openai.github.io/openai-agents-python/"
+    },
+    {
+      "id": "basics-019",
+      "type": "qa",
+      "question": "多 Agent 到底值不值得？用 Anthropic 的数据说明。",
+      "answer": "- **收益**：Opus 4 主 Agent + Sonnet 4 子 Agent，内部研究评测比单 Agent Opus 4 高 90.2%，适合广度优先、可并行的任务。\n- **代价**：Agent 约 4× chat token，多 Agent 约 15×；协调、评测、部署复杂度都上升。\n- **结论**：任务价值要撑得起 token；强依赖共享上下文的场景（多数写代码任务）并不适合。",
+      "explanation": "易错点：为了「架构先进」上多 Agent。Anthropic 明确说：先找最简单的方案，只在可测量地提升效果时才加复杂度。",
+      "tags": [
+        "多 Agent",
+        "成本"
+      ],
+      "difficulty": 3,
+      "source": "Anthropic, How we built our multi-agent research system https://www.anthropic.com/engineering/multi-agent-research-system"
+    },
+    {
+      "id": "basics-020",
+      "type": "mcq",
+      "question": "「Why Do Multi-Agent LLM Systems Fail?」把失败归为哪三大类？",
+      "choices": [
+        "模型能力、数据质量、算力不足",
+        "训练、推理、部署",
+        "提示词、工具、记忆",
+        "系统设计、Agent 间错位、任务验证与终止"
+      ],
+      "answerIndex": 3,
+      "explanation": "MAST 分类法：① 系统设计（角色/流程定义含糊）；② inter-agent misalignment（信息不同步、重复劳动、越权）；③ task verification & termination（缺验证、不收敛）。它对多 Agent 的启示是：失败多在「协作」而不在「单个模型」。",
+      "tags": [
+        "多 Agent",
+        "失败模式"
+      ],
+      "difficulty": 3,
+      "source": "Cemri et al., Why Do Multi-Agent LLM Systems Fail?, arXiv:2503.13657 https://arxiv.org/abs/2503.13657"
+    },
+    {
+      "id": "basics-021",
+      "type": "qa",
+      "question": "Agent 的护栏应该布在哪几层？",
+      "answer": "四层都要有：\n\n- **输入层**：意图/相关性分类、注入与越权检测、PII 脱敏\n- **执行层**：工具白名单与最小权限、参数校验、金额/步数/token 预算\n- **输出层**：事实与引用校验、敏感内容过滤\n- **流程层**：高风险动作强制人工确认、可回滚、留审计\n\n只靠一句「不要做坏事」的 system prompt 不算护栏。",
+      "explanation": "易错点：把护栏等同于内容过滤。Agent 最大的风险是「权限过大 + 动作不可逆」。",
+      "tags": [
+        "护栏",
+        "安全"
+      ],
+      "difficulty": 1,
+      "source": "OWASP Top 10 for LLM Applications https://owasp.org/www-project-top-10-for-large-language-model-applications/；Anthropic, Building effective agents"
+    },
+    {
+      "id": "basics-022",
+      "type": "qa",
+      "question": "HITL（人在环）怎么设计才不拖垮体验？",
+      "answer": "- **按风险分级**：只读查询自动放行；写操作、花钱、对外发送才审批\n- **审批带上下文**：说明「要做什么、影响谁、能否撤销」，而不是甩一段 JSON 给用户\n- **异步化**：低风险任务后台跑完通知；高风险即时确认\n- **兜底**：超时策略、可回滚、审计留痕",
+      "explanation": "易错点：所有步骤都让人确认。审批疲劳后用户会无脑点「同意」，HITL 就失效了。",
+      "tags": [
+        "HITL",
+        "护栏"
+      ],
+      "difficulty": 2,
+      "source": "Anthropic, Building effective agents（checkpoint 处暂停等人工反馈）https://www.anthropic.com/engineering/building-effective-agents；OWASP LLM08 Excessive Agency https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+    },
+    {
+      "id": "basics-023",
+      "type": "cloze",
+      "question": "评估 Agent 至少要看三件事：{{c1::任务成功率（结果）}}、{{c2::轨迹质量（过程）}}、{{c3::成本与延迟}}。",
+      "answer": "只报成功率会掩盖「蒙对」和「绕远路」；只看过程又会奖励形式正确但结果错误。三类指标要一起看，并按场景加权（客服重结果，代码 Agent 重测试通过率）。",
+      "explanation": "易错点：只用一个总体成功率汇报。分层看：任务级、步骤级、工具级。",
+      "tags": [
+        "评估",
+        "指标"
+      ],
+      "difficulty": 1,
+      "source": "τ-bench, arXiv:2406.12045；AgentBench, arXiv:2308.03688"
+    },
+    {
+      "id": "basics-024",
+      "type": "qa",
+      "question": "pass^k 和 pass@k 有什么区别？",
+      "answer": "- **pass@k**：k 次里**至少一次**成功，衡量「有没有这个能力」，越采样越高。\n- **pass^k**：k 次**全部**成功，衡量「稳不稳定」，随 k 增大而下降。\n- τ-bench 用 pass^k 专门暴露「偶尔能行、多数不行」的 Agent。\n- 线上更该关心 pass^k：用户不会给你重试 k 次的机会。",
+      "explanation": "易错点：把单次成功率当稳定性。有状态的多轮任务里，单步 90% 正确率不代表整条任务能成。",
+      "tags": [
+        "评估",
+        "pass^k"
+      ],
+      "difficulty": 2,
+      "source": "Yao et al., τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains, arXiv:2406.12045 https://arxiv.org/abs/2406.12045"
+    },
+    {
+      "id": "basics-025",
+      "type": "mcq",
+      "question": "用 LLM-as-judge 打分时，最需要控制的是什么？",
+      "choices": [
+        "位置偏差、长度/啰嗦偏好、自我偏好",
+        "评委模型的参数规模必须最大",
+        "全程只用一个固定 prompt 不换",
+        "评委的 temperature 必须调到 1"
+      ],
+      "answerIndex": 0,
+      "explanation": "MT-Bench 论文实测三种偏差：偏向第一个回答（position bias）、偏向更长更啰嗦的回答（verbosity bias）、偏向自己家族生成的答案（self-enhancement bias）。缓解手段：交换 A/B 位置、长度归一、多评委、rubric + 人工校准。",
+      "tags": [
+        "评估",
+        "LLM-as-judge"
+      ],
+      "difficulty": 3,
+      "source": "Zheng et al., Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena, arXiv:2306.05685 https://arxiv.org/abs/2306.05685"
+    },
+    {
+      "id": "basics-026",
+      "type": "qa",
+      "question": "轨迹评估（trajectory eval）怎么做才可靠？",
+      "answer": "- **硬断言**：该调的工具有没有调、先查证后回答、有没有越权\n- **rubric 评分**：让 judge 评过程质量（重复、遗漏、绕路）\n- **终态优先**：有状态任务判断最终环境状态对不对，而不是逐步比对唯一路径\n- **允许多解**：同一目标可以有多条合法轨迹，别把路径写死",
+      "explanation": "易错点：把参考轨迹当标准答案。Agent 的合法路径往往不止一条，写死会误杀正确行为。",
+      "tags": [
+        "评估",
+        "轨迹"
+      ],
+      "difficulty": 3,
+      "source": "Anthropic, How we built our multi-agent research system（end-state evaluation 附录）https://www.anthropic.com/engineering/multi-agent-research-system"
+    },
+    {
+      "id": "basics-027",
+      "type": "qa",
+      "question": "Agent 的成本与延迟主要花在哪，怎么降？",
+      "answer": "**成本大头**：多轮累积的上下文 token、串行工具调用、失败重试。\n\n- 降本：模型路由（简单步用小模型）、prompt/结果缓存、上下文裁剪与摘要\n- 降延迟：并行工具调用、流式输出、预取、长任务异步化\n- 必须监控：每任务 token、工具调用次数、P50/P95 延迟",
+      "explanation": "易错点：只看单次 API 价格。Agent 的成本是「步数 × 上下文长度」，上下文膨胀比模型单价影响更大。",
+      "tags": [
+        "成本",
+        "延迟"
+      ],
+      "difficulty": 2,
+      "source": "Anthropic, multi-agent research system（4× / 15× token 数据）https://www.anthropic.com/engineering/multi-agent-research-system"
+    },
+    {
+      "id": "basics-028",
+      "type": "qa",
+      "question": "Agent 四类常见失败模式与对策？",
+      "answer": "- **死循环**：同一动作反复 → max steps、动作去重、无进展检测\n- **工具误用**：参数错/选错工具 → schema 校验、描述防呆、错误信息可操作\n- **幻觉**：编造事实或工具结果 → 强制引用、工具校验、无依据拒答\n- **上下文污染**：错误中间结论被反复引用 → 子 Agent 隔离、关键状态外置、定期重写摘要",
+      "explanation": "易错点：只改 prompt 治循环。循环往往是「工具没有返回可用的新信息」，要修工具与反馈，而不是加一句「不要重复」。",
+      "tags": [
+        "失败模式",
+        "排障"
+      ],
+      "difficulty": 3,
+      "source": "Why Do Multi-Agent LLM Systems Fail?, arXiv:2503.13657；Anthropic, Building effective agents"
+    }
+  ]
+}

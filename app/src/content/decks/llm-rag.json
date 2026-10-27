@@ -1,0 +1,273 @@
+{
+  "id": "llm-rag",
+  "title": "LLM 面试题库 · RAG 检索增强卷",
+  "description": "24 道 RAG 高频面试题：三大知识缺陷与核心思路、七步链路、余弦相似度与 ANN（HNSW/IVF/PQ）、向量库选型、纯向量三问题与 BM25 混合及 RRF、Rerank 的 Bi/Cross-Encoder 与 71%→89%、Chunk 切分与 overlap、Embedding 选型与维度、幻觉两类六策、链路排查与四种高级优化、Agentic RAG、大厂追问的权重/Top-K/延迟/索引更新/成本/十万用户设计。",
+  "version": 1,
+  "updatedAt": "2026-10-27",
+  "cards": [
+    {
+      "id": "rag-001",
+      "type": "qa",
+      "question": "面：为什么不让 LLM 直接回答，非要用 RAG？",
+      "answer": "**先列三大缺陷，再说 RAG 补什么。**\n\n- 知识截止：训练数据有截止日期，昨天发生的事、新发布的框架它不知道。\n- 私有数据触达不了：公司内部文档、客户数据、业务规则它从没见过。\n- 容易幻觉：不确定又想回答时会编造看似合理却错误的信息，没有外部知识校验时尤其严重。\n\nRAG 在生成前先从外部知识库检索相关信息塞进 Prompt，让模型基于事实作答。定位是补充外部知识而非替代模型：理解与生成归 LLM，事实依据归检索。",
+      "explanation": "追问预警：面试官常接着问「那和微调怎么选」——知识频繁更新、要可溯源用 RAG，固化领域能力或改风格才考虑微调。",
+      "tags": ["RAG 基础", "知识缺陷"],
+      "difficulty": 1,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§1 RAG 是什么？为什么需要 RAG？ https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-002",
+      "type": "cloze",
+      "question": "RAG 的核心是在生成之前先从 {{c1::外部知识库检索相关信息}}，把检索结果塞进 {{c2::Prompt}}，让模型基于事实回答。",
+      "answer": "没有 RAG 是「问题 → LLM → 回答」，可能幻觉；有 RAG 变成「问题 → 检索相关知识 → [问题 + 检索结果] → LLM → 回答」。补的是事实依据而不是模型能力：检索错了等于递上伪证据，所以召回质量决定效果上限；检索不到时应拒答，别让模型硬编。",
+      "explanation": "易错点：把 RAG 说成「给模型喂更长的上下文」。它的关键是先取证据再约束生成，没有约束就只是变长的提示词。",
+      "tags": ["RAG 基础", "核心思路"],
+      "difficulty": 1,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§1 RAG 是什么？为什么需要 RAG？ https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-003",
+      "type": "qa",
+      "question": "面：完整讲一下 RAG 从提问到回答的链路。",
+      "answer": "**七步：Query → 文档处理 → Chunking → Embedding → 检索 → Rerank → 生成。**\n\n- 文档处理：解析 PDF/Word/Markdown，决定表格怎么提、要不要 OCR。\n- Chunking：切多大、overlap 多少、按语义还是固定长度。\n- Embedding：选模型、定维度、中文还是英文。\n- 检索：纯向量还是混合检索，Top-K 设多少。\n- Rerank：用什么模型，重排后再取 Top-N。\n- 生成：Prompt 怎么写、幻觉怎么约束。\n\n坑：只报工具名。面试官要听的是每一步的关键决策和理由。",
+      "explanation": "加分说法：不是「我用了 Milvus」，而是「为什么选 Milvus 不选 FAISS、延迟要求多少、Top-K 为什么是 5 不是 10」。",
+      "tags": ["链路", "七步"],
+      "difficulty": 1,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§2 RAG 的完整链路 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-004",
+      "type": "mcq",
+      "question": "讲七步链路时，哪种答法最容易被判「只跑过 Demo」？",
+      "choices": [
+        "只说我用了 Milvus + LangChain，讲不出选型和参数理由",
+        "说明为什么选 Milvus 而不是 FAISS，以及延迟要求",
+        "解释 Top-K 为什么设 5 而不是 10",
+        "讲清 chunk_size 与 overlap 的取值依据"
+      ],
+      "answerIndex": 0,
+      "explanation": "链路题考的是每一步的关键决策点，只报技术栈等于没答。能给出选型对比、延迟预算、参数依据，才说明真调过。其余三项都是「给理由」的正确示范。",
+      "tags": ["链路", "面试答法"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§2 RAG 的完整链路 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-005",
+      "type": "qa",
+      "question": "面：向量检索的相似度怎么算？为什么不用欧氏距离？",
+      "answer": "把文本映射成高维空间里的点，语义相近的点距离近；检索就是找离问题向量最近的几个文档向量。\n\n最常用余弦相似度：cos(A, B) = A·B / (|A| × |B|)，值域 [-1, 1]，越大越相似。1 表示方向完全相同，0 表示无关，-1 表示方向相反。\n\n不用欧氏距离的原因：向量模长受文本长度影响，长文本模长大但语义未必更相关；余弦只看方向不看长度，对语义检索更合适。",
+      "explanation": "易错点：把余弦相似度说成「距离」并当成 0–1 区间。它的值域是 [-1, 1]，且越大才越相似。",
+      "tags": ["向量检索", "余弦相似度"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§3 向量检索原理 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-006",
+      "type": "cloze",
+      "question": "HNSW 的 {{c1::M}} 是每个节点的邻居数，{{c2::ef_construction}} 是建图时的搜索宽度。",
+      "answer": "M 越大图越密、内存占用越大；ef_construction 越大建图越慢、图质量越高。这两项决定索引自身的召回上限，查询侧再放宽也只是在已建好的图上多走几步。HNSW 用多层跳表图从上层粗搜到下层精搜，查询快但内存占用大，是 Milvus 的默认索引。",
+      "explanation": "面试加分：能报出这两个参数并说清「越大越慢、越准、越占内存」的取舍，面试官就知道你真调过索引。",
+      "tags": ["ANN", "HNSW 参数"],
+      "difficulty": 3,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§3 向量检索原理 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-007",
+      "type": "qa",
+      "question": "面：HNSW、IVF、PQ 三种 ANN 索引怎么选？",
+      "answer": "**先看瓶颈是延迟、精度还是内存。**\n\n- HNSW：多层跳表图，上层粗搜、下层精搜；查询快、内存占用大，是 Milvus 默认。\n- IVF：先聚类，只搜最近的几个簇；精度可控，适合超大规模。\n- PQ（乘积量化）：压缩向量维度，省内存但精度有损，常与 IVF 搭配。\n\n百万级以上逐条算相似度太慢，ANN 的思路是不要求找到绝对最近的、找到足够近的就行，用召回换速度；代价是召回不再 100%，上线要监控召回率。",
+      "explanation": "易错点：以为 ANN 是精确检索。它是近似最近邻，索引参数和查询参数都在「召回 vs 延迟/内存」之间做交易。",
+      "tags": ["ANN", "索引选型"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§3 向量检索原理 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-008",
+      "type": "qa",
+      "question": "面：Milvus、FAISS、Qdrant 各自适合什么场景？",
+      "answer": "**先分「库」与「数据库」。**\n\n- FAISS：是库，嵌在应用进程里，持久化要自己实现；百万级以下、做原型验证最快，没有额外服务要运维。\n- Milvus：是数据库，独立服务、支持分布式，原生持久化；适合亿级大规模生产，运维成本中等（要部署集群）。\n- Qdrant：是数据库，独立服务、轻量级，单节点起步；适合千万级中小规模生产。\n\n答法：先讲自己的规模与延迟要求，再讲为什么没用另一个。",
+      "explanation": "易错点：只报产品名。面试官要听的是「生产要持久化和分布式，FAISS 不支持，所以选 Milvus」。",
+      "tags": ["向量库", "选型"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§4 向量数据库选型 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-009",
+      "type": "qa",
+      "question": "面：纯向量检索有什么问题？为什么要混合检索？",
+      "answer": "**三个致命问题：**\n\n- 精确匹配不行：搜「RFC 7231」可能返回「HTTP 协议规范」这种语义相关、却没提这个编号的文档。\n- 专业术语召回差：搜「K8s 的 HPA 怎么配置」，捞上来的是「Kubernetes 自动扩缩容」，真正讲 HPA 细节的反而排不上。\n- 专有名词遗漏：产品名、人名、缩写容易丢。\n\n根因是向量靠语义相似度、不保证字面命中。混合检索同时跑向量与 BM25 关键词两路，再合并结果，取长补短。",
+      "explanation": "追问点：混合不是把两路分数直接相加——量纲不同，要么归一化，要么改用排名融合（RRF）。",
+      "tags": ["混合检索", "召回"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§5 纯向量检索与混合检索 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-010",
+      "type": "cloze",
+      "question": "RRF 的打分是 {{c1::Σ 1/(k + rank_i(d))}}，其中 k 通常取 {{c2::60}}。",
+      "answer": "rank_i(d) 是文档 d 在第 i 路检索里的排名，排名越靠前贡献越高。RRF 只用排名、不用原始分数，所以余弦相似度与 BM25 的分数量纲不同也能直接合并，不必先归一化、也不用调权重。代价是丢掉了「差多少分」的信息；k 越大，靠前名次的优势被压得越平。",
+      "explanation": "易错点：把两路原始分数直接相加。余弦在 0–1、BM25 可能到几十，不归一化就是让一路碾压另一路。",
+      "tags": ["混合检索", "RRF"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§5 纯向量检索与混合检索 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-011",
+      "type": "mcq",
+      "question": "两路结果合并，为什么生产更推荐 RRF 而不是固定权重相加？",
+      "choices": [
+        "RRF 会先把两路原始分数归一化，所以更准",
+        "RRF 需要用标注数据训练权重，训练后更稳",
+        "不同 query 的最优权重差异很大，固定权重在长尾上会翻车",
+        "固定权重只能用于 BM25，向量那一路不能加权"
+      ],
+      "answerIndex": 2,
+      "explanation": "手调权重（向量 0.7 + BM25 0.3）在验证集平均分上可能还行，但换一类 query 最优比例就变了，固定权重不稳。A 恰好说反：RRF 压根不使用原始分数，只按排名融合，因此无需归一化。",
+      "tags": ["混合检索", "权重"],
+      "difficulty": 3,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§12 大厂追问汇总 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-012",
+      "type": "qa",
+      "question": "面：已经做了混合检索，为什么还要 Rerank？",
+      "answer": "**粗筛与精排是两件事。**\n\n- 检索是粗筛：从百万文档里快速捞出 Top-20，用向量相似度或 BM25 打分，这类分数是近似的，不一定反映真实相关性。\n- Rerank 是精排：对这批候选逐个重算相关性，通常用 Cross-Encoder，把真正相关的排到前面。\n\n效果：Top-5 召回率 71% → 89%，Top-3 准确率 65% → 84%。代价是延迟上升，所以只对少量候选精排，不在全库上重排。",
+      "explanation": "标配流程：先检索捞 Top-20，再 Rerank 取 Top-5。常见中文选型是 bge-reranker-v2-m3（开源免费）、bce-reranker-base_v1（轻量）。",
+      "tags": ["Rerank", "精排"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§6 Rerank 重排序 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-013",
+      "type": "mcq",
+      "question": "Bi-Encoder 与 Cross-Encoder 的关键差别在哪？",
+      "choices": [
+        "Bi-Encoder 把两者拼在一起，所以文档向量能预计算",
+        "两者都只能对 Top-20 候选精排，区别只是模型大小",
+        "Cross-Encoder 可以离线把全库文档编码成向量",
+        "Cross-Encoder 把问题和文档拼在一起过模型，更准但无法预计算"
+      ],
+      "answerIndex": 3,
+      "explanation": "Bi-Encoder 分别编码、编码时互不知道对方存在，只能算「大概相关」，但文档向量可离线预计算，撑得住百万级粗筛。Cross-Encoder 每个（问题, 文档）对都要过一遍模型，准但慢，因此只能用于少量候选精排。A 把两者关系说反了。",
+      "tags": ["Rerank", "编码器"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§6 Rerank 重排序 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-014",
+      "type": "qa",
+      "question": "面：chunk 切太大、切太小各有什么问题？",
+      "answer": "**大块稀释，小块断章。**\n\n- 切太大：一个块塞了太多内容，真正相关的那部分被无关内容淹没，相似度分数被拉低、排名靠后。\n- 切太小：完整论述被切成碎片，检索出来的是断章取义的片段，模型拿不到完整含义，生成质量下降。\n\n折中靠 overlap：相邻块重叠一部分，避免关键信息正好落在切割点上，通常取 chunk_size 的 10%–20%。坑：只调大小不看文档结构，FAQ 和表格被切坏后怎么调都救不回。",
+      "explanation": "加分点：给出真实调参记录，例如 chunk_size 从 1000 降到 500、召回率提升 15%，比背一个数字有说服力。",
+      "tags": ["Chunk", "overlap"],
+      "difficulty": 1,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§7 Chunk 切分 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-015",
+      "type": "qa",
+      "question": "面：chunk 的切分策略和文档类型怎么配合？",
+      "answer": "**三种切法，成本递增。**\n\n- 固定长度：例如每 512 token 一块，最简单，但不管语义边界，可能把一句话切两半。\n- 递归切分：按段落 → 句子 → 字符逐级退让，尽量在自然边界处切断，生产环境最常用。\n- 语义切分：用 Embedding 比相邻句子相似度找断点，理论最好但计算量大，生产用得少。\n\n文档类型分开处理：Markdown 按标题层级并保留层级信息；PDF 先解表格和图片再按段落切；代码按函数或类切；FAQ 一问一答为一个块不拆开。",
+      "explanation": "易错点：一份文档只用一种切法。产品手册、代码库、FAQ 通常要三套解析与切分规则并存。",
+      "tags": ["Chunk", "文档类型"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§7 Chunk 切分 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-016",
+      "type": "qa",
+      "question": "面：中文场景 Embedding 模型怎么选？",
+      "answer": "**看三个维度：语言支持、向量维度、检索效果（MTEB 排名）。**\n\n- bge-large-zh-v1.5：1024 维，中文效果最好，开源可本地部署。\n- bge-m3：1024 维，多语言，同时支持稠密、稀疏、多向量三种检索。\n- text-embedding-3-large：3072 维，效果好但走 API 有成本，中文不如 bge。\n- text-embedding-3-small：1536 维，便宜，英文场景首选。\n\n坑：换模型不重建索引。向量空间变了，旧库全部作废，要新旧索引双写过渡。",
+      "explanation": "追问点：和 ada-002 比过吗？答法是讲清维度、语言、部署方式与成本的取舍，而不是只报分数。",
+      "tags": ["Embedding", "选型"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§8 Embedding 选型 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-017",
+      "type": "mcq",
+      "question": "向量维度越高，检索效果就越好吗？",
+      "choices": [
+        "是，维度就是表达能力，直接拉满即可",
+        "不一定，1024 维已是性价比区间，3072 维提升有限而存储翻三倍",
+        "是，只要向量库支持就应选最高维度",
+        "无关，维度只影响训练不影响线上检索"
+      ],
+      "answerIndex": 1,
+      "explanation": "维度高表达能力强，但存储与检索成本同步上涨。1024 维是当前性价比最好的选择；3072 维检索效果提升有限，存储却翻三倍。维度直接决定索引大小与查询耗时，要靠实验在召回与成本间取平衡。",
+      "tags": ["Embedding", "维度"],
+      "difficulty": 1,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§8 Embedding 选型 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-018",
+      "type": "qa",
+      "question": "面：RAG 的幻觉分哪两种？",
+      "answer": "**按与检索结果的关系分两类。**\n\n- 内在幻觉：检索结果里有正确信息，但生成内容与它矛盾。例如检索写准确率 91%，回答写成 95%。\n- 外在幻觉：生成了检索结果里根本没有的内容。检索只提到 A，模型自己编出 B。\n\n分开看有意义：内在幻觉多是生成不忠实，靠 Prompt 约束与输出校验；外在幻觉常是检索没覆盖，模型用参数记忆填空，要靠兜底与拒答。",
+      "explanation": "追问点：怎么度量？内在看断言与检索结果的一致率，外在看无依据断言占比，两类要分开统计，否则优化方向会选错。",
+      "tags": ["幻觉", "分类"],
+      "difficulty": 1,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§9 幻觉处理 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-019",
+      "type": "qa",
+      "question": "面：RAG 幻觉怎么处理？给一套组合。",
+      "answer": "**六种策略叠加，别只靠一句「不要编造」。**\n\n1. Prompt 约束：只能基于检索结果回答，没有的信息不要编。\n2. 输出自校验：再跑一次，逐条标 ✅ 有依据 / ❌ 无依据 / ⚠️ 部分依据。\n3. 引用标注：每条信息挂来源块，便于人工核查。\n4. 温度调低：temperature 设 0.1–0.3，减少随机发挥。\n5. 检索与生成对齐：大段内容与所有检索结果都不相关，大概率是幻觉。\n6. 兜底回答：相似度都低于阈值时直接回「未找到相关信息」。\n\n取舍：自校验多一次调用，延迟与成本上升，通常只在高风险场景常开。",
+      "explanation": "易错点：只说「用了 Prompt 约束」。要报组合与量化效果，例如三种策略叠加后幻觉率从 30% 降到 12%。",
+      "tags": ["幻觉", "生成约束"],
+      "difficulty": 3,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§9 幻觉处理 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-020",
+      "type": "qa",
+      "question": "面：检索效果不好，你怎么按链路排查？",
+      "answer": "**四个阶段逐段定位，别一上来换模型。**\n\n1. 文档处理：PDF 表格提得准不准，图片文字有没有 OCR，PDF/Word/Markdown 各做了什么适配。\n2. Chunk：chunk_size 合不合理，有没有按文档类型调参，overlap 设了多少。\n3. 检索：纯向量还是混合检索，Top-K 设几，有没有加 Rerank。\n4. 生成：Prompt 怎么写的，幻觉怎么处理的。\n\n做法：抽一批 bad case，先判断正确块有没有进候选——分清是召回问题还是排序问题，再决定调索引还是加重排。",
+      "explanation": "易错点：召回和排序混在一起调。正确块没进候选是召回问题，进了候选没排上来才是排序问题。",
+      "tags": ["排查", "优化"],
+      "difficulty": 3,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§10 检索效果优化 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-021",
+      "type": "qa",
+      "question": "面：RAG 有哪些高级检索优化手段？",
+      "answer": "**四种，按投入递增。**\n\n- Query 改写：把「怎么调优」这类模糊短问，先用 LLM 补全成「RAG 系统中向量检索准确率低，有哪些优化方法」这样的检索式。\n- 多路召回：原问题、改写问题、提取关键词、拆分子问题各检索一路，再合并结果。\n- Parent-Child：小块存向量负责命中，命中后返回所属父块的完整内容保上下文。\n- 上下文窗口扩展：命中一块后把前后块一起带上。\n\n取舍：改写与多路都增加调用和延迟，先量化召回缺口再上；Parent-Child 要维护块到父块的映射。",
+      "explanation": "加分点：给出量化效果，例如混合检索在专业术语场景比纯向量提升 25%，Rerank 把 Top-5 召回从 71% 提到 89%。",
+      "tags": ["优化", "召回"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§10 检索效果优化 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-022",
+      "type": "qa",
+      "question": "面：Agentic RAG 和普通 RAG 有什么区别？",
+      "answer": "**差别在谁决定检索计划。**\n\n普通 RAG 是固定流程：用户问 → 检索一次 → 生成回答；第一次检索结果不好也不会自己纠正，直接硬生成。Agentic RAG 把 Agent 的规划能力引入检索：要不要检索、查哪些数据源、结果够不够、不够就换个 query 再查，够了才生成。\n\n对比：检索次数固定 1 次 vs 动态多次；策略固定 pipeline vs 模型自选；token 消耗低 vs 高。适合法律、医疗、金融这类复杂问答，简单问答别过度设计。",
+      "explanation": "追问点：实体间复杂关联、多跳推理、全局关系归纳，两种 RAG 都吃力，这种场景要把检索从向量切到知识图谱。",
+      "tags": ["Agentic RAG", "架构"],
+      "difficulty": 1,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§11 Agentic RAG https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-023",
+      "type": "qa",
+      "question": "面：混合检索权重怎么调？Top-K 设多少？",
+      "answer": "**权重两条路。**\n\n- 手动加权：向量 0.7 + BM25 0.3，在验证集上试出最佳比例；缺点是不同 query 的最优比例差异大。\n- RRF 融合：不设权重、只靠排名，更稳健，生产环境更推荐。\n\n**Top-K：** K=3 可能漏掉相关文档，召回不够；K=20 塞进太多无关信息，增加幻觉风险和 token 消耗。通常 K=5–10 是平衡点；加了 Rerank 就先 K=20 检索、再精排取 Top-5。\n\n坑：用离线平均指标定 K，忽略长尾 query。",
+      "explanation": "追问点：问题太模糊怎么办？先 Query 改写，再多路召回合并；仍太模糊就让 Agent 追问澄清，别硬猜。",
+      "tags": ["混合检索", "Top-K"],
+      "difficulty": 2,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§12 大厂追问汇总 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    },
+    {
+      "id": "rag-024",
+      "type": "qa",
+      "question": "面：设计十万用户的 RAG 知识库，怎么讲？",
+      "answer": "**五层展开。**\n\n- 数据层：文档解析 → Chunk → Embedding，向量库与 ES 双写。\n- 检索层：混合检索 + Rerank，先 Top-20 再精排 Top-5。\n- 生成层：vLLM 部署 + Prompt 模板 + 幻觉约束。\n- 工程层：Redis 缓存热点查询、异步处理文档更新、监控检索准确率与幻觉率。\n- 安全层：文档权限隔离、Prompt Injection 防御、敏感信息过滤。\n\n配套：延迟靠流式输出、KV Cache 复用、Prompt 压缩、HNSW 调优把检索压到 50ms 以下；索引更新按日级全量、实时增量、零停机双写三选一。",
+      "explanation": "加分点：主动提「权限过滤要发生在检索阶段而不是生成阶段」——只在生成侧拦，检索结果已经泄露。",
+      "tags": ["场景设计", "系统设计"],
+      "difficulty": 3,
+      "source": "卡码笔记《RAG 大厂面试题汇总》§12 大厂追问汇总 https://notes.kamacoder.com/interview/llm/rag_interview.html"
+    }
+  ]
+}

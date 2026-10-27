@@ -1,0 +1,273 @@
+{
+  "id": "llm-vibecoding",
+  "title": "LLM 面试题库 · AI 编程卷",
+  "description": "24 张卡，取材于卡码笔记 AI 编程专题正文：Vibe Coding 的定义与四维对比、工程师五大优势、Token 成本五策略（20 倍价差 / 3-5 倍上下文 / 24 倍 Prompt 差 / 90% 缓存命中）、工程纪律（Git 恢复点、数据与代码分离、环境差异）、Claude Code 原理（Agent Loop、8700 token 系统提示词、三种子 Agent、三层压缩、deny>ask>allow）、grep/glob/read 三件套、SDD 规约驱动与代码安全合规。",
+  "version": 1,
+  "updatedAt": "2026-10-27",
+  "cards": [
+    {
+      "id": "vibe-001",
+      "type": "qa",
+      "question": "Vibe Coding 是谁、何时提出的？原义是什么？",
+      "answer": "**2025 年 2 月由 Andrej Karpathy 提出，原义是「不审查、不理解、直接 Accept AI 生成的代码」。**\n\n它描述的不是「用 AI 写代码」，而是一种责任态度。和 AI 辅助编程做四维对比：\n\n- 代码生成：两边都是 AI 生成（唯一相同的一维）；\n- 代码审查：一边不看直接 Accept，一边逐行审查；\n- 报错处理：一边整段粘回给 AI，一边先分析根因再决定；\n- 对代码负责：一边不负责，一边完全负责。\n\n面试官问「你是不是 Vibe Coding」，真正想问的是：你对自己 Accept 的代码负不负责。",
+      "explanation": "易错点：把它等同于「用 AI 编程」。四维里只有「代码生成」相同，差别全在审查、排错和责任。",
+      "tags": ["Vibe Coding", "定义", "责任归属"],
+      "difficulty": 1,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§1 Vibe Coding 到底是什么 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-002",
+      "type": "mcq",
+      "question": "Vibe Coding 与 AI 辅助编程的四维对比中，哪一维其实相同？",
+      "choices": [
+        "代码生成方式",
+        "代码审查方式",
+        "报错处理方式",
+        "对代码的责任"
+      ],
+      "answerIndex": 0,
+      "explanation": "四维里只有「代码生成」两边一致，都是 AI 生成。差异在三处：审查上 Vibe 不看直接 Accept、辅助编程逐行审查；报错上 Vibe 整段粘给 AI、辅助编程先分析根因再决定；责任上 Vibe 不负责、辅助编程完全负责。所以区别不在用不用 AI，而在谁负责。",
+      "tags": ["Vibe Coding", "辨析"],
+      "difficulty": 1,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§1 Vibe Coding 到底是什么 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-003",
+      "type": "qa",
+      "question": "面：AI 越来越强，你的优势到底在哪？",
+      "answer": "**先承认 AI 写得好，再换掉整个论证框架。**\n\n旧套路「AI 做不了复杂业务逻辑、写不了安全代码、处理不了并发」已不成立：复杂结算、输入校验、跨模块调用、N+1 查询优化，只要上下文给够它都能做，面试官一句「你给够上下文了吗」就怼回来。\n\n新框架：优势不是「AI 做不了什么」，而是「AI 做什么都需要你先做对什么」——问题定义、上下文构建、结果验证、技术决策、成本控制。决策的落点是拍板要看团队现状与历史教训；成本的落点是知道什么活用什么模型、什么任务不该给它。\n\n收尾：AI 做不了是防守，越守越窄；AI 需要你是驱动，越用越强。",
+      "explanation": "这两种说法的潜台词相反：前者意味着 AI 变强你就出局，后者意味着只要还要人驱动，位置就在。",
+      "tags": ["面试答题", "五大优势"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§2 AI 越来越强，你的优势到底是什么 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-004",
+      "type": "qa",
+      "question": "优势一「问题定义」：拿退款功能怎么讲？",
+      "answer": "**「加个退款功能」不是需求，只是一句话。**\n\n要变成可执行规格，至少回答：部分退款怎么处理、退款与优惠券的互斥规则是什么、多次退款怎么保证幂等、退款超时了怎么自动关闭。\n\n这些答案 AI 不知道，产品经理往往也没说清。你不定义，它只能猜，最后给你一个「看起来像那么回事」的接口——跑是能跑，业务逻辑经不起推敲。\n\n面试说法：AI 需要精确的问题定义，我把模糊需求拆成边界条件、异常处理和业务规则，这些它不会主动问你。",
+      "explanation": "追问预警：可能让你现场拆一个需求。准备一个真实例子，说得出你补了哪几条原本没人提的边界。",
+      "tags": ["问题定义", "需求拆解"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§2 优势一：问题定义能力 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-005",
+      "type": "qa",
+      "question": "优势二「上下文构建」：为什么同一工具效果差很多？",
+      "answer": "**因为喂进去的上下文质量不同，不是工具不同。**\n\n同一个退款需求：A 只说「写一个退款接口」，AI 凭想象写，大概率不符合业务；B 给出完整业务规则、数据库表结构、上下游接口文档，产出的代码基本能直接用。\n\n构建能力拆三件事：知道给什么（哪些是 AI 必须知道的）、知道不给什么（塞十万行无关代码既费 token 又干扰模型）、知道怎么组织（先背景后需求，和反过来效果完全不同）。\n\n面试说法：AI 的上限由你的输入质量决定。",
+      "explanation": "易错点：以为信息越多越好。「不给什么」和「给什么」同等重要，噪声会直接拉低产出质量。",
+      "tags": ["上下文构建", "输入质量"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§2 优势二：上下文构建能力 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-006",
+      "type": "qa",
+      "question": "什么叫 AI 的「合理但错误」代码？该怎么验证？",
+      "answer": "**看着对、跑得通，但语义是错的。**\n\n典型三例：退款接口返回成功，钱却退到了错误账户；权限校验通过，用的是错误角色；数据处理完成，精度丢了两位小数。\n\n这类 bug 跑测试常常发现不了，因为测试是按你的预期写的，而你的预期本身可能就和业务有偏差。\n\n验证分三层：业务语义（行为是否符合业务意图）、边界（极端情况下的表现）、回归（有没有影响其他功能）。这种代码最容易混过 Review，因为看起来真的很合理。",
+      "explanation": "加分点：主动说「测试覆盖不到语义正确性」，能体现你知道验证和测试是两件事。",
+      "tags": ["结果验证", "合理但错误"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§2 优势三：结果验证能力 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-007",
+      "type": "qa",
+      "question": "模型路由怎么分层？成本大概能降多少？",
+      "answer": "**按任务复杂度分档，不是一律上最强模型。**\n\n- 代码补全、简单修改、代码解释、文档生成 → 小模型：快、便宜、够用；\n- 函数实现、Bug 修复 → 中模型：平衡成本与质量；\n- 架构设计、复杂重构、代码审查 → 大模型：需要深度推理。\n\n差距：大模型输出价格是小模型的近 20 倍。若 70% 的日常任务能用小模型解决，整体成本能降 60% 以上。\n\n注意 Claude Code 内部已经在做双模型路由，但面试官想听的不是「工具自动做了」，而是你理解为什么这么分。",
+      "explanation": "易错点：答成「选便宜模型」。路由的关键是任务分级，不是无脑降级。",
+      "tags": ["模型路由", "Token 成本"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§3 策略一：模型路由 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-008",
+      "type": "mcq",
+      "question": "下面哪种任务最该自己动手写，而不是交给 AI？",
+      "choices": [
+        "给不熟悉的框架写一份入门示例",
+        "已定位到某行缺空判断的一行修复",
+        "批量生成重复度很高的 CRUD 样板代码",
+        "快速探索三种技术方案的可行性"
+      ],
+      "answerIndex": 1,
+      "explanation": "判据是「你已经知道问题在哪、怎么改」。一行空判断手改十秒；交给 AI 要先读报错、再读文件、分析上下文、生成补丁、自己校验，你还要审查它有没有改错地方，前后三分钟、几万 token。其余三项恰好是 AI 划算的场景：不熟的语言入门、重复模式代码、需要快速铺开多种方案。",
+      "tags": ["任务评估", "成本控制"],
+      "difficulty": 1,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§3 策略五：评估——哪些任务让 AI 做更贵 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-009",
+      "type": "qa",
+      "question": "上下文管理怎么省 token？能省多少？",
+      "answer": "**别把整个代码库塞进去，只给相关的那一小块。**\n\n四个动作：只给相关代码（改用户模块就别把支付模块塞进去）；用摘要代替全文（500 行配置只给关键段）；按需加载（先给接口定义，要实现细节再展开）；定期清理（长对话历史每轮都在计费，该开新会话就开）。\n\n实际差距：只给相关代码 vs 给整个项目，token 消耗能差 3-5 倍。\n\n还有一个反直觉的点：无关代码越多，生成质量反而越差，因为注意力被干扰了。所以上下文管理不只是省钱，也是在提质量。",
+      "explanation": "易错点：把上下文管理理解成「压缩历史」。更省的做法是压根不读无关文件。",
+      "tags": ["上下文管理", "Token 成本"],
+      "difficulty": 1,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§3 策略二：上下文管理 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-010",
+      "type": "cloze",
+      "question": "一次精确 Prompt 约 {{c1::500}} token，四轮模糊 Prompt 约 {{c2::12000}} token，相差 {{c3::24}} 倍。",
+      "answer": "来回改是最贵的用法：每一轮都要重新付一次上下文钱。一次说清要包含四件事——目标（不是「写个接口」，而是「接收退款请求、参数含订单号和退款金额、需要幂等校验」）、约束（性能、安全、代码规范）、上下文（表结构、上下游接口）、示例（一组具体输入输出胜过一百字形容）。省下的是 3-4 轮往返，外加人的时间。",
+      "explanation": "反模式：只说「写个接口」。缺参数、缺幂等要求、缺错误约定，模型只能自由发挥，然后你再来回改。",
+      "tags": ["Prompt 优化", "Token 成本"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§3 策略三：Prompt 优化 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-011",
+      "type": "qa",
+      "question": "缓存和复用有哪三种做法？合计能省多少？",
+      "answer": "**核心是别让 AI 每次从零生成。**\n\n- Prompt 缓存：相同前缀在 API 层可缓存，Anthropic 原生支持 Prompt Caching，相同前缀命中率能到 90%；\n- 代码模板：CRUD、表单验证这类维护一套模板，AI 只填差异部分；\n- 会话复用：同一类任务的会话延续之前的上下文，不重新开张。\n\n配合起来，相似任务的 token 消耗能降 50% 以上。\n\n面试说法：我们维护模板让 AI 填差异，再叠 Prompt Caching，同类需求不再重复烧钱。",
+      "explanation": "追问点：缓存为什么不一定命中？前缀一变就失效，所以系统提示和模板要尽量稳定。",
+      "tags": ["缓存复用", "Token 成本"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§3 策略四：缓存和复用 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-012",
+      "type": "qa",
+      "question": "为什么说「没有 Git 提交点就别让 AI 大改」？",
+      "answer": "**因为你需要能退回去，而 Git 是唯一的恢复点。**\n\n典型翻车路径：帮我加登录 → 再加会员 → 优化页面 → 整理目录，AI 一路改，最后项目跑不起来，你想回到「刚才还能跑的状态」，发现根本没提交过。这时 AI 也救不了你，它只能按已经乱掉的代码继续猜。\n\n基本纪律五条：每个小功能提交一次；大改前先看 git status；不要在一堆未提交改动上叠需求；改完用 git diff 看它到底动了什么；验证没问题再提交。\n\n没有 Git，Vibe Coding 就不是开发，是赌命。",
+      "explanation": "易错点：只在「功能完成」时提交。真正的恢复点在每次大改之前，而不是之后。",
+      "tags": ["工程纪律", "Git"],
+      "difficulty": 1,
+      "source": "卡码笔记《Vibe Coding 避坑指南》§一 不会 Git，别让 AI 大规模改代码 https://notes.kamacoder.com/interview/llm/vibe_coding_backup_engineering.html"
+    },
+    {
+      "id": "vibe-013",
+      "type": "mcq",
+      "question": "把 SQLite、上传文件、日志放在项目目录里，最大风险是什么？",
+      "choices": [
+        "Git 仓库体积变大，clone 和拉取变慢",
+        "本地与线上路径不一致，启动时直接报错",
+        "AI 分不清代码和真实数据，清理或部署时误删",
+        "备份脚本会漏掉日志目录，日志无法归档"
+      ],
+      "answerIndex": 2,
+      "explanation": "真实危险是语义混淆：你让 AI「清理无用文件」「重新初始化项目」「部署到服务器」，它不知道 data/、db/、uploads/ 里是线上资产，会当普通目录处理。代码丢了能从 Git 找，数据丢了往往真没了。规矩：代码目录只放代码、配置模板和迁移脚本；数据独立目录；.gitignore 排除真实数据；仓库只放 .env.example；测试与生产数据分开。",
+      "tags": ["工程纪律", "数据边界", "备份"],
+      "difficulty": 1,
+      "source": "卡码笔记《Vibe Coding 避坑指南》§二 数据库不要和代码混在一起 https://notes.kamacoder.com/interview/llm/vibe_coding_backup_engineering.html"
+    },
+    {
+      "id": "vibe-014",
+      "type": "qa",
+      "question": "为什么别对 AI 说「帮我做一个完整系统」？",
+      "answer": "**因为你会逼它在一个超大上下文里同时做太多决策。**\n\n结果是：权限边界不清、接口错误处理随意、数据库设计临时拼、前端状态到处传、后台权限形同虚设、测试基本没有、部署配置和本地配置混在一起——这就是「一坨」的来源。\n\n正确做法是小步闭环：登录注册跑通就提交，再做 CRUD、评论、上传搜索，最后部署。每一步都写清四件事：这次只改哪些文件、哪些模块不许动、怎么算验证完成、失败了怎么回退。\n\n架构拆分是人的责任，AI 只能帮你写模块。",
+      "explanation": "追问点：怎么给边界？把「不能做什么」写进任务——不改表结构、不动生产配置、只生成迁移脚本待审。",
+      "tags": ["工程纪律", "模块拆分", "任务边界"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 避坑指南》§四 不要让 AI 一口气完成整个项目 https://notes.kamacoder.com/interview/llm/vibe_coding_backup_engineering.html"
+    },
+    {
+      "id": "vibe-015",
+      "type": "cloze",
+      "question": "本地能跑不等于线上能跑：本地读 .env，线上配置可能来自 {{c1::环境变量或配置中心}}；本地运行用户是你自己，线上可能是 {{c2::www-data 或 app}}。",
+      "answer": "环境差异至少七项：代码目录（项目根 vs /var/www/xxx）、数据目录（./data vs 独立挂载）、配置来源、数据库实例、上传文件位置、运行用户、回滚方式（Git 回退 vs 发布版本回滚加数据恢复）。AI 只看本地项目时会按本地逻辑生成方案，所以上线前先把这张差异表写给 AI。线上事故很多不是代码逻辑错，而是环境假设错。",
+      "explanation": "易错点：以为把 .env 一起传上去就行。配置来源、运行用户、挂载路径任何一项不同，本地能跑的程序都可能起不来。",
+      "tags": ["工程纪律", "环境差异", "上线"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 避坑指南》§五 本地能跑，不代表线上能跑 https://notes.kamacoder.com/interview/llm/vibe_coding_backup_engineering.html"
+    },
+    {
+      "id": "vibe-016",
+      "type": "qa",
+      "question": "Claude Code 的核心架构是什么？循环靠什么停？",
+      "answer": "**一个 while 循环：把对话历史和系统提示词发给模型，按返回类型分支。**\n\n返回纯文本 → 说明任务完成，输出并退出；返回工具调用 → 先做权限检查（不通过就问用户），再执行工具，把结果 push 进 messages，进入下一轮。\n\n停止条件有两种：模型返回纯文本（它自己判断做完了），或触发安全限制（工具调用次数超限、用户手动中断）。\n\n精妙之处在于停止条件是模型自主判断的，不是写死「调三次就停」，所以它能连续跑几十步完成复杂任务。本质是 ReAct 的工程化——架构不复杂，工程细节才是壁垒。",
+      "explanation": "易错点：以为核心是某个精巧的状态机。就是循环加工具调用，复杂度都在循环各环节的治理上。",
+      "tags": ["Claude Code", "Agent Loop", "ReAct"],
+      "difficulty": 1,
+      "source": "卡码笔记《Claude Code 大厂面试题汇总》§二 AI 编程工具的底层架构 https://notes.kamacoder.com/interview/llm/claude_code_deep_dive.html；卡码笔记《Vibe Coding 大厂面试题汇总》§4 工程落地类 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-017",
+      "type": "qa",
+      "question": "8700 token 系统提示词怎么构成？CLAUDE.md 为何不在其中？",
+      "answer": "**它是多个模块拼起来的，不是一整块文本。**\n\n构成：系统规则 ~2900、工具定义 ~3000、CLAUDE.md ~1200、通用规则 ~500、Git 规则 ~300、技能定义 ~800。\n\n关键设计：CLAUDE.md 不作为系统提示词，而是作为用户消息注入。因为系统提示词优先级最高，若把项目自定义指令放进去，它就和 Anthropic 的安全规则同级，可能被用来绕过安全限制。作为用户消息注入后，优先级低于安全规则、高于普通用户消息——这是安全与灵活性的平衡。\n\n另一个细节：安全规则还嵌在每个工具描述里，模型每次调工具都会重看一遍，等于双重保险。",
+      "explanation": "追问点：CLAUDE.md 能覆盖安全规则吗？不能——它既不能覆盖系统提示词的安全条款，也不能让 AI 执行被 deny 的操作。",
+      "tags": ["Claude Code", "系统提示词", "CLAUDE.md"],
+      "difficulty": 3,
+      "source": "卡码笔记《Claude Code 大厂面试题汇总》§三 8700 token 的系统提示词 https://notes.kamacoder.com/interview/llm/claude_code_deep_dive.html；卡码笔记《Vibe Coding 大厂面试题汇总》§4 工程落地类 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-018",
+      "type": "qa",
+      "question": "三种子 Agent 怎么分工？Explore 为什么用 Haiku？",
+      "answer": "**三种：Explore、Plan、General-purpose。**\n\n- Explore：Haiku，只读，快速探索代码库；\n- Plan：继承父模型，只读，设计实现方案；\n- General-purpose：继承父模型，全部工具，复杂多步骤任务。\n\nExplore 用最便宜的模型做最脏的活：内部能烧 100K+ token 读几十个文件、搜整个仓库，回传给父 Agent 的只有 1500-2000 token 摘要，主上下文不会被撑爆。这叫「廉价子 Agent 做信息收集，昂贵主 Agent 做决策」。\n\n限制：最多一层嵌套防递归、上下文独立（看不到父对话）、结果不给用户看。",
+      "explanation": "易错点：以为子 Agent 的意义是并行提速。核心是隔离探索噪音，并行只是附带收益。",
+      "tags": ["Claude Code", "子 Agent", "上下文治理"],
+      "difficulty": 3,
+      "source": "卡码笔记《Claude Code 大厂面试题汇总》§五 子 Agent 机制 https://notes.kamacoder.com/interview/llm/claude_code_deep_dive.html；卡码笔记《Vibe Coding 大厂面试题汇总》§3 策略二：上下文管理 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-019",
+      "type": "cloze",
+      "question": "200K 窗口用到 {{c1::92-95%}} 时触发三层压缩：先 {{c2::截断工具结果}}，再压缩对话历史，最后强制截断。",
+      "answer": "第一层压工具结果：读了一个 1000 行文件，可能只留前 100 行和后 100 行，中间用摘要替代。第二层把早期对话轮次压成摘要，例如「之前读过 config.js，含路由配置」。第三层才强制截断最早的对话，这时模型可能真的忘掉早期上下文。代价是三类问题：忘记早期的修改、重复读同一个文件浪费 token、丢掉开头说过的「不要改这个文件」。",
+      "explanation": "易错点：以为压缩只在「满了」之后发生。触发点在上限之前，因为生成摘要本身也要占 token 空间。",
+      "tags": ["Claude Code", "上下文窗口", "压缩机制"],
+      "difficulty": 3,
+      "source": "卡码笔记《Claude Code 大厂面试题汇总》§六 200K 上下文窗口怎么管理 https://notes.kamacoder.com/interview/llm/claude_code_deep_dive.html；卡码笔记《Claude Code 上下文窗口面试详解》§八 Auto-Compact 压什么、留什么、丢什么 https://notes.kamacoder.com/interview/llm/claude_code_context_window_interview.html"
+    },
+    {
+      "id": "vibe-020",
+      "type": "mcq",
+      "question": "关于 Claude Code 的专用工具设计，哪一项说法正确？",
+      "choices": [
+        "Edit 每次重写整个文件，保证内容完整一致",
+        "Bash 支持交互式命令，可用 vim 与 rebase -i",
+        "Write 只替换匹配片段，适合改动已有文件",
+        "Bash 默认 2 分钟超时，防止命令无限挂住"
+      ],
+      "answerIndex": 3,
+      "explanation": "Bash 默认 2 分钟超时，就是为了防无限循环；它还不支持交互式命令（不能用 vim、git rebase -i），长命令要转后台。Edit 不是重写整文件，而是给 old_string/new_string 只替换匹配段，好处是省 token、减冲突、便于审查，代价是 old_string 必须唯一匹配。Write 是整文件覆盖，适合新建。",
+      "tags": ["Claude Code", "工具设计", "Edit"],
+      "difficulty": 2,
+      "source": "卡码笔记《Claude Code 大厂面试题汇总》§四 18+ 内置工具怎么设计 https://notes.kamacoder.com/interview/llm/claude_code_deep_dive.html；卡码笔记《Vibe Coding 大厂面试题汇总》§3 策略二：上下文管理 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-021",
+      "type": "qa",
+      "question": "Claude Code 怎么防危险操作？权限优先级是什么？",
+      "answer": "**靠 23 层顺序检查，把安全分散嵌进各层，而不是集中在一个模块。**\n\n优先级是 deny > ask > allow：deny 匹配即拒、不询问；ask 匹配就弹窗确认；都没命中才按 allow 直接执行。deny 永远压过 allow——即使你 allow 了某操作，只要有 deny 命中仍会被拦。\n\n四种模式：default、acceptEdits、plan、bypassPermissions（全部允许，危险）。\n\n还叠了 Hooks：PreToolUse 拦截、PostToolUse 回滚、Stop 终检。核心哲学是「测量两次、切割一次」：不可逆操作必须人确认。",
+      "explanation": "追问点：为什么不是 allow 优先？因为安全原则是默认拒绝、显式允许；allow 优先会让一条宽松配置绕过全部检查。",
+      "tags": ["Claude Code", "权限模型", "Hooks"],
+      "difficulty": 3,
+      "source": "卡码笔记《Claude Code 大厂面试题汇总》§七 23 层安全检查与权限评估 https://notes.kamacoder.com/interview/llm/claude_code_deep_dive.html；卡码笔记《Vibe Coding 大厂面试题汇总》§4 工程落地类 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    },
+    {
+      "id": "vibe-022",
+      "type": "qa",
+      "question": "为什么 Claude Code 用 grep/glob/read 而不是纯 RAG 检索代码？",
+      "answer": "**因为代码检索要实时、精确、可解释、多轮决策，而向量召回擅长语义相似。**\n\nRAG 检索代码四个硬伤：chunk 破坏结构（按行切函数被截断，按函数切类上下文丢了）；向量相似不等于正确（找 validateToken 会召回 verifyToken、decodeToken）；索引滞后（文件刚改完就要读，索引没更新就召回旧代码）；Top-K 一次性下注（召回错了后面全歪）。\n\n三件套是现读磁盘、逐轮收敛：Glob 找文件入口、Grep 定位行号、Read 只读命中附近几十行。关键不在 grep 本身，而在它被放进 Agent Loop——工具结果不是答案，而是下一轮决策的证据。",
+      "explanation": "别答「因为 grep 快」。真正理由是代码检索要精确与实时，而多轮循环能在召回出错时改方向，一次性 Top-K 不能。",
+      "tags": ["Claude Code", "代码检索", "RAG"],
+      "difficulty": 3,
+      "source": "卡码笔记《Claude Code 为什么不用 RAG 检索代码》§三 RAG 检索代码的四个硬伤、§七 真正关键的是多轮循环 https://notes.kamacoder.com/interview/llm/claude_code_grep_rag_interview.html；卡码笔记《Claude Code 大厂面试题汇总》§二 AI 编程工具的底层架构 https://notes.kamacoder.com/interview/llm/claude_code_deep_dive.html"
+    },
+    {
+      "id": "vibe-023",
+      "type": "qa",
+      "question": "SDD 是什么？为什么 AI 写得越快越要先写规约？",
+      "answer": "**SDD 是以规约为核心工件的开发方式：先把目标、用户行为、边界和验收标准写成可审查的规约，再由规约推导技术方案、任务、代码与测试，需求或实现变化时同步更新。**\n\n链路要能一路追到底：用户意图 → 行为规约 → 技术方案 → 可执行任务 → 代码与测试 → 验收证据。\n\n为什么现在重要：代码生成变快了，但需求没自动变清楚，瓶颈从「怎么写」转向「该写什么」。AI 面对缺失信息不会停下来问，它会补一个「最像正确答案」的方案——合理，但不一定符合你的业务。方向错一点，错误会被高速复制到接口、数据库、测试和文档。",
+      "explanation": "三个误解：把规约当几十页大作文（重点是减少歧义）；写完就锁死（应是活的，实现反馈要回流）；等于超长 Prompt（规约要进版本管理、可 Review、可追溯）。",
+      "tags": ["规约驱动", "SDD", "验收标准"],
+      "difficulty": 2,
+      "source": "卡码笔记《Spec-Driven Development 规约驱动开发》§一 什么是 SDD、§二 为什么重新火起来 https://notes.kamacoder.com/interview/llm/spec_driven_development_interview.html"
+    },
+    {
+      "id": "vibe-024",
+      "type": "qa",
+      "question": "用 AI 写代码，怎么保证不泄露公司代码？",
+      "answer": "**先承认事实：AI 工具会把代码上传到模型服务端做推理。**\n\n厂商说不会用于训练，但合规部门不一定买账。四招落地：\n\n- 敏感代码不上传：核心算法、密钥管理、交易策略不在 AI 工具里打开，也不让它生成和审查；\n- 用企业版而非个人版：企业版有数据隔离协议，合规风险小得多；\n- 配 .gitignore 和 .claudeignore：把敏感目录排除在 AI 的访问范围外，防止它自动读取；\n- 团队统一规范：哪些项目能用 AI、哪些不能，写进开发规范，新人入职就知道边界。\n\n面试说法：我们按项目敏感度分级，敏感项目不用 AI，非敏感项目用企业版加忽略配置。",
+      "explanation": "追问点：厂商承诺不用于训练就够了吗？不够，还要靠企业版协议、目录级忽略和项目分级三道防线。",
+      "tags": ["安全合规", "代码外泄", "企业版"],
+      "difficulty": 2,
+      "source": "卡码笔记《Vibe Coding 大厂面试题汇总》§4 工程落地类：怎么保证不泄露公司代码 https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html"
+    }
+  ]
+}

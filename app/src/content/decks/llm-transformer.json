@@ -1,0 +1,273 @@
+{
+  "id": "llm-transformer",
+  "title": "LLM 面试题库 · Transformer 原理卷",
+  "description": "24 道 Transformer 高频面试题，按专题 8 节组织：应用开发为何要懂、RNN/CNN 的困境与替代方案、Self-Attention 与 Q/K/V、多头分工与结构化 Prompt、位置编码与外推、三大架构选型、O(n²) 与中间迷失、高频追问。每题给「一句话结论 + 关键取舍 + 落地要点」。",
+  "version": 1,
+  "updatedAt": "2026-10-27",
+  "cards": [
+    {
+      "id": "transformer-001",
+      "type": "qa",
+      "question": "面：不训练模型，应用开发为什么也要懂 Transformer？",
+      "answer": "面试官问这道题，重点不在矩阵推导，而在你能否说清模型行为的来由。日常遇到的几件事都能从架构解释：Token 用量为何动辄上万、上下文窗口为何有硬上限（GPT-4 128K、Claude Opus 200K 都不是随手定的）、长对话开头信息为何越来越模糊、结构化 Prompt 为何比大段文字更稳。懂架构，优化有据可依；不懂，只能靠经验试。",
+      "explanation": "追问预警：面试官常接「那举一个你据此改过的决策」。提前准备具体案例，比如把长文档改成检索加摘要、把关键约束前置，比背概念有说服力。",
+      "tags": ["Transformer", "应用视角", "考察点"],
+      "difficulty": 1,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§1 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-002",
+      "type": "mcq",
+      "question": "下列现象与机制的对应，哪一项成立？",
+      "choices": [
+        "上下文窗口有上限，既与注意力的平方级计算量有关，也与位置编码的覆盖范围有关",
+        "Token 消耗只由输出长度决定，与注意力的计算方式无关",
+        "长对话开头信息变模糊，是因为模型把早期内容从存储里删掉了",
+        "结构化 Prompt 更有效，是因为它一定比大段文字更短、Token 更少"
+      ],
+      "answerIndex": 0,
+      "explanation": "窗口上限是两条约束叠加：注意力计算量随长度平方增长，位置编码在训练未见过的位置上又不可靠。「Token 只由输出长度决定」错在成本随输入长度超线性上升；「把早期内容删掉」错在内容并未删除，是权重被稀释、位置信号外推失真；「结构化必然更短」错在信息量可以相同，收益来自注意力更容易定位。",
+      "tags": ["Transformer", "上下文窗口", "归因"],
+      "difficulty": 1,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§1 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-003",
+      "type": "qa",
+      "question": "面：RNN 的致命问题是什么？",
+      "answer": "两条，且互相拖累：\n\n- **梯度消失**：序列一长，靠前 Token 的梯度传到末端几乎衰减殆尽。以千级 Token 的文本为例，第一个 Token 的信号走到第一千步已所剩无几，长距离依赖自然记不住。\n- **串行计算**：只能逐个 Token 推进，后一个必须等前一个算完，无法并行，训练速度被卡死。\n\n这两点决定了它撑不起今天的模型规模。",
+      "explanation": "易错点：只答梯度消失。串行才是训练效率的硬伤——即便把梯度问题修好，逐步计算仍然吃不满 GPU。",
+      "tags": ["RNN", "梯度消失", "串行计算"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§2 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-004",
+      "type": "qa",
+      "question": "面：CNN 局限在哪？注意力怎么补上？",
+      "answer": "CNN 有两个短板：\n\n- **局部感受野**：一次只看窗口内的词，想覆盖全句就得堆很多层，层数一多训练难度随之上升。\n- **长距离依赖弱**：相隔很远的两个词之间的关系很难捕捉。\n\n注意力换一种做法：每个 Token 直接与所有 Token 算相关性，首尾两词之间只有一步距离；所有 Token 又能同时计算，GPU 的大规模并行因此派得上用场。",
+      "explanation": "追问点：那为什么不用「很深的 CNN」？能逼近全局，但层数与训练难度同步上升，也没有注意力那种一步到位的显式相关性。",
+      "tags": ["CNN", "感受野", "注意力机制"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§2 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-005",
+      "type": "cloze",
+      "question": "被视为 Transformer 潜在替代路线的有 {{c1::Mamba（状态空间模型）}}、{{c2::RWKV}}，以及只在部分层替换结构的 {{c3::混合架构}}。",
+      "answer": "Mamba 推理快、长序列占优，但生成质量与通用性仍逊于 Transformer；RWKV 想兼得 RNN 与 Transformer 的长处，生态尚不成熟；混合架构只在部分层换掉注意力，仍在探索。面试给结论即可：Transformer 之所以站稳，是因为它在「算得快」和「看得全」之间找到了少见的平衡点，至今没有哪个架构能同时在通用性和性能上压过它。",
+      "explanation": "易错点：把 Mamba 说成「已经替代」。它在线性时间与长序列上有优势，但通用性、生态与工具链仍差一截，目前更多出现在混合架构里。",
+      "tags": ["Mamba", "RWKV", "替代方案"],
+      "difficulty": 1,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§2 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-006",
+      "type": "qa",
+      "question": "面：用一句话说清 Self-Attention 在做什么？",
+      "answer": "让序列中每个词去看它与其他所有词的关系，再按关系远近决定关注多少，从而动态改写自己的表示。\n\n「银行」是标准例子：在「我去银行存钱」里它挨着「存钱」，指向金融机构；在「我在河边的银行散步」里挨着「河边」，指向河岸。同一个词，含义由上下文决定，不是查表查出来的。",
+      "explanation": "易错点：讲成「查字典」。Self-Attention 没有外部知识库，权重完全由当前输入内部的 Q 与 K 相似度算出，这也是它无法凭空引入训练数据之外信息的原因。",
+      "tags": ["Self-Attention", "上下文", "表示学习"],
+      "difficulty": 1,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-007",
+      "type": "qa",
+      "question": "面：Q、K、V 分别是什么？用通俗话说。",
+      "answer": "三者是同一批 Token 经三个矩阵映射出的向量，各扮一个角色：\n\n- **Q**：「我在找什么」——当前词想知道自己和谁有关。\n- **K**：「我有什么」——每个词能提供什么线索。\n- **V**：「我的内容」——真正会被取走的信息。\n\n以「我去银行存钱」为例：银行的 Q 发问，存钱的 K 回应「有关系」，河边的 K 回应「没关系」，再按关系远近加权，把存钱的 V 取过来更新银行。",
+      "explanation": "追问点：为什么不能直接用词向量充当 Q/K/V？可以，但表达力受限；三套独立投影让模型分别学习「怎么问」「怎么答」「取什么」。",
+      "tags": ["Self-Attention", "QKV", "注意力机制"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-008",
+      "type": "qa",
+      "question": "面：Self-Attention 对写 Prompt 有什么启示？",
+      "answer": "既然注意力按相关性分配，喂进去什么就决定模型看什么，上下文质量直接决定输出质量。三个可观察的现象：\n\n- Prompt 模糊时没有可对齐的关键信息，注意力被摊到无关内容上；\n- 上下文里塞进大量无关代码，关键信息被稀释，质量下滑；\n- 结构清晰时注意力更容易落到要点。\n\n做法因此很朴素：只放相关材料，把要求写成明确条目。",
+      "explanation": "易错点：把它说成玄学。权重归一化后总量固定，多一分给噪音就少一分给关键信息，是可以量化的稀释效应。",
+      "tags": ["Self-Attention", "上下文工程", "Prompt"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-009",
+      "type": "mcq",
+      "question": "关于 Multi-Head Attention，哪项说法成立？",
+      "choices": [
+        "单头注意力也能同时学好语法、指代、语义三类关系，多头只是提速手段",
+        "多头把 QKV 复制多份，每份独立算注意力、各学一种关系模式，最后拼接综合",
+        "多头是先由人工设计出语法头、指代头，再分别训练并固定下来的",
+        "多头要求每个头看到不同的输入片段，否则无法形成分工"
+      ],
+      "answerIndex": 1,
+      "explanation": "单头只有一套 QKV 变换，只能学一种关系模式；多头各有一套变换，在不同表示空间里各学一类关系，最后拼接判断。分工不是人工指定，而是训练中自发形成；每个头看到的仍是同一段输入，只是投影不同。所以 A、C、D 都不成立。",
+      "tags": ["Multi-Head Attention", "分工", "关系模式"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§4 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-010",
+      "type": "qa",
+      "question": "面：为什么结构化 Prompt 比大段文字更有效？",
+      "answer": "因为多头各有分工，结构化让每个头更快找到自己的目标。以写退款接口为例，把「目标 / 参数 / 约束 / 上下文」分行列清楚，偏语法的头能读结构，偏语义的头能抓关键词，偏指代的头能对上参数与字段；把这些揉成一段流水句，信息量没变，却要多花计算去还原结构。换句话说，分栏排版服务的对象是注意力头，不是读者的眼睛。",
+      "explanation": "加分点：强调「信息量相同、只是组织方式不同」。这能挡住「结构化就是压缩 Token」的错误理解。",
+      "tags": ["Multi-Head Attention", "结构化 Prompt", "应用视角"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§4 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-011",
+      "type": "qa",
+      "question": "面：Transformer 为什么必须有位置编码？",
+      "answer": "因为 Self-Attention 本身不看顺序：把「猫吃鱼」和「鱼吃猫」喂进去，若没有位置信息，两者算出的结果是一样的——它只判断哪些词相关，不区分谁在前谁在后。但语序承载语义，「狗咬人」与「人咬狗」用词相同、含义相反。所以必须额外把位置「硬加」进去，让模型知道每个词的排位。",
+      "explanation": "易错点：说成「模型记不住顺序」。更准确的说法是「注意力本身无序，靠外挂的位置信号补上」，这也解释了为何位置编码方案一变，长上下文能力就跟着变。",
+      "tags": ["位置编码", "语序", "注意力机制"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§5 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-012",
+      "type": "cloze",
+      "question": "早期用 {{c1::正弦/余弦函数}} 为每个位置生成独特向量，现在多数模型改用 {{c2::可学习的位置编码}}。",
+      "answer": "正弦编码靠固定公式生成，不占参数但外推能力一般；可学习编码把每个位置的向量当成参数，由训练学出来，简单直接，代价是超出训练长度就没有对应向量可用。面试不必背公式，讲清逻辑即可：位置编码的作用相当于给每个 Token 贴一枚序号牌，模型据此分辨它在序列中的先后。",
+      "explanation": "易错点：以为正弦编码是「过时技术」。它无需训练、可按公式外推，在不少长上下文方案里仍被当作基础对照。",
+      "tags": ["位置编码", "正弦编码", "可学习编码"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§5 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-013",
+      "type": "qa",
+      "question": "面：位置编码为什么会让长上下文质量下降？",
+      "answer": "关键在训练覆盖范围有限。模型训练时最长只见过有限位置，比如 4096 个 Token，那第 5000 个位置的编码它就没学过；虽然能做外推，但可靠性会下降。于是出现三个后果：上下文窗口有硬上限，超出后编码不可靠；声称支持 200K 的模型，后半段注意力质量通常不如前半段；中间位置的信息天然被关注得更少。",
+      "explanation": "追问预警：「扩窗口就解决了吗？」不能。窗口是编码能覆盖的范围，而有效利用长度还受中间迷失与训练分布限制，标称 200K 不等于 200K 都好用。",
+      "tags": ["位置编码", "外推", "长上下文"],
+      "difficulty": 3,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§5 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-014",
+      "type": "qa",
+      "question": "面：BERT、T5、GPT 三大架构怎么区分与选型？",
+      "answer": "按注意力方向分三类：\n\n- **Encoder-Only（BERT）**：双向注意力，每个 Token 看到整段输入，擅长理解、分类、抽取；做不了生成，双向等于提前看到答案。\n- **Encoder-Decoder（T5、BART）**：编码器双向读输入、解码器单向写输出，适合翻译、摘要这类输入输出界限清晰的任务。\n- **Decoder-Only（GPT、Claude、LLaMA）**：只有因果注意力，只预测下一个 Token，生成、对话、推理最强。",
+      "explanation": "易错点：说「Decoder-Only 理解更强所以全能」。它做理解靠规模与 Prompt，而非架构优势；纯判别任务上同等规模的 Encoder 往往更省更准。",
+      "tags": ["Encoder-Only", "Encoder-Decoder", "Decoder-Only", "选型"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§6 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-015",
+      "type": "qa",
+      "question": "面：主流大模型为何都选 Decoder-Only 架构？",
+      "answer": "三条理由：\n\n1. **扩展收益最大**：同样参数与数据下，规模放大时 Decoder-Only 提升最稳，GPT 系列从 1.17 亿参数一路做到 1.8 万亿仍在涨。\n2. **一专多能**：天生会生成，靠 Prompt 设计也能做理解；Encoder-Only 反过来做不了生成。\n3. **训练更省事**：每个位置的监督目标都是「下一个 Token」，目标统一；Encoder-Decoder 要同时协调理解与生成两部分。",
+      "explanation": "易错点：把三条背成口号。每条都要能接一句为什么——架构统一带来扩展性、目标统一带来训练效率，这是因果而非并列。",
+      "tags": ["Decoder-Only", "Scaling", "选型"],
+      "difficulty": 3,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§6 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-016",
+      "type": "mcq",
+      "question": "关于 Decoder-Only 的判断，哪一项成立？",
+      "choices": [
+        "Decoder-Only 只擅长生成，凡理解任务都必须换成 Encoder-Only",
+        "Decoder-Only 训练时要同时优化理解与生成两个独立目标",
+        "Decoder-Only 规模越大收益越稳，且靠 Prompt 设计也能覆盖理解任务",
+        "Encoder-Decoder 已被淘汰，翻译与摘要任务不再使用它"
+      ],
+      "answerIndex": 2,
+      "explanation": "三条理由合起来就是「规模越大收益越稳 + 靠 Prompt 也能做理解」：扩展收益稳、生成理解都能做、训练目标统一。「只擅长生成」错在通过 Prompt 也能做理解；「两个独立目标」错在目标只有一个，即预测下一个 Token；「Encoder-Decoder 已淘汰」错在 T5、BART 这类架构在翻译摘要上仍在用，只是通用大模型赛道转向了 Decoder-Only。",
+      "tags": ["Decoder-Only", "Scaling", "架构辨析"],
+      "difficulty": 3,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§6 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-017",
+      "type": "qa",
+      "question": "面：Decoder-Only 的本质对 Prompt 写法有何影响？",
+      "answer": "本质是「给定前面的内容，预测下一个 Token」，也就是续写——对话、代码生成、问答，本质上都是续写。由此三条经验：\n\n- 收尾那句最关键，模型从你最后停下的地方接着写，方向由它决定；\n- Few-shot 有效，因为给足了可模仿的续写范式；\n- System Prompt 排在最前，最早出现的内容会影响整个过程，相当于先立好基调。",
+      "explanation": "追问预警：「那中间放什么？」中间放可检索的支撑材料。三分法：前段立规矩、后段下指令、中段摆事实，顺序错了效果就打折。",
+      "tags": ["Decoder-Only", "Prompt 结构", "Few-shot"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§6 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-018",
+      "type": "qa",
+      "question": "面：O(n²) 复杂度具体指什么？",
+      "answer": "指自注意力的计算量随序列长度平方增长：每个 Token 都要和所有 Token 算相关性，共 n 乘 n 个分数，长度翻倍计算量约四倍。\n\n常见量级参考：1K Token 约 100 万次、2K 约 400 万次、4K 约 1600 万次、128K 已达 163 亿次。\n\n后果是 Token 成本随长度超线性上升、窗口不能无限开大，长对话每生成一个词都要对全部历史重算注意力。",
+      "explanation": "易错点：把整个模型说成 O(n²)。准确说只有注意力是平方项，前馈层随 n 仍是线性；所以长上下文优化常从注意力下手。",
+      "tags": ["复杂度", "O(n²)", "上下文窗口"],
+      "difficulty": 1,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§7 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-019",
+      "type": "cloze",
+      "question": "按平方增长估算，4K Token 的注意力计算量约 {{c1::1600 万次}}，128K Token 约 {{c2::163 亿次}}。",
+      "answer": "计算量正比于 n 的平方：1K 约 100 万次、2K 约 400 万次、4K 约 1600 万次，128K 就到 163 亿量级。这解释了 Token 成本为何随长度超线性上升、窗口为何存在硬件上限，以及长对话为何越聊越慢。注意这是单个注意力矩阵的量级，真实模型还要乘层数与头数。",
+      "explanation": "易错点：把 163 亿当成常数。它是「每层每头」的量级，实际开销远大于表格里的单次估算；也别用 4K 的数字去推 128K，平方项增长极快。",
+      "tags": ["复杂度", "数量级", "成本"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§7 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-020",
+      "type": "qa",
+      "question": "面：位置编码外推问题有哪些缓解方案？",
+      "answer": "主流做法有三条：\n\n- **RoPE（旋转位置编码）**：目前最常用，GPT-4、LLaMA 都采用，外推能力优于正弦编码。\n- **YaRN / NTK-Aware**：通过调整频率，把位置编码的有效范围撑大。\n- **滑动窗口注意力**：不做全局注意力，只在局部窗口内计算，牺牲部分全局信息换取更长的有效长度。\n\n共同点是都属缓解而非根治，超长上下文的质量仍会打折扣。",
+      "explanation": "追问预警：「为什么不能根治？」位置信号失真只是表象，模型在训练分布外本就没见过那么远的依赖模式，单改编码解决不了分布问题。",
+      "tags": ["位置外推", "RoPE", "YaRN", "滑动窗口"],
+      "difficulty": 2,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§7 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-021",
+      "type": "qa",
+      "question": "面：什么是 Lost in the Middle？",
+      "answer": "指模型对输入中间部分的关注度明显低于开头和结尾，而且不随模型变大、上下文变长而消失。\n\n原因与注意力分配有关：开头信息位置靠前，会影响后续所有 Token；结尾信息离生成位置最近，天然拿到更多权重；中间内容两边都不靠，容易被略过。\n\n落地对策很直接：关键信息别放中间，放开头或结尾。",
+      "explanation": "易错点：以为「窗口够大就不会丢」。位置利用效率与窗口容量是两件事，200K 窗口里中间段落照样可能被忽略。",
+      "tags": ["Lost in the Middle", "长上下文", "上下文工程"],
+      "difficulty": 1,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§7 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-022",
+      "type": "qa",
+      "question": "面：生成为什么慢？投机解码能解决吗？",
+      "answer": "Decoder-Only 一次只出一个 Token，第 N 个必须等前 N 减 1 个生成完，这种自回归特性决定了速度上限。\n\n投机解码的思路：先用小模型快速草拟几个候选 Token，再让大模型并行核对，通过的就保留、不通过的重新生成。它能提升吞吐，但没有改变「串行生成」这个事实。\n\n工程上的应对是承认理解比生成快：需要大量输出时用流式返回改善体感。",
+      "explanation": "追问预警：「投机解码会改变输出分布吗？」按验证规则可做到与目标模型同分布，但加速比取决于草稿命中率，并不是稳定数倍。",
+      "tags": ["自回归", "投机解码", "推理延迟"],
+      "difficulty": 3,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§7 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-023",
+      "type": "mcq",
+      "question": "应用层应对 O(n²) 的四条策略，哪项组合正确？",
+      "choices": [
+        "把整个仓库一次性塞进上下文，再把 max_tokens 调大以覆盖长输入",
+        "关闭位置编码让注意力退化为线性计算，从而绕过平方复杂度",
+        "只在输出阶段压缩回答长度，输入部分维持原样不做处理",
+        "控制上下文只给相关片段、按任务路由大小模型、关键信息前置、生成阶段用流式"
+      ],
+      "answerIndex": 3,
+      "explanation": "四条策略即控长、路由、前置、流式：只给相关代码而非整个项目；长上下文用长窗口模型、短任务用小模型省钱；关键信息前置以规避中间迷失；生成用流式缓解串行瓶颈。「整仓塞入并调大 max_tokens」是反模式，反而放大平方成本；位置编码不能关，关了模型就失去语序；只砍输出治标不治本，平方项主要来自输入。",
+      "tags": ["成本优化", "上下文管理", "应用视角"],
+      "difficulty": 3,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§8 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    },
+    {
+      "id": "transformer-024",
+      "type": "qa",
+      "question": "面：为什么 Prompt 末尾的指令影响最大？",
+      "answer": "因为 Decoder-Only 是续写：模型紧接你最后一个 Token 往下写，末尾指令直接决定续写方向。开头的内容会影响全局倾向，但末尾离生成位置最近，权重天然更高。\n\n所以常见排布是：前段放 System Prompt 立规矩，后段放关键指令指方向，中段摆上下文材料。",
+      "explanation": "追问预警：「那开头就不重要了吗？」重要，但作用方式不同——开头影响全局倾向，结尾决定当下动作。两者不冲突，是分工。",
+      "tags": ["Decoder-Only", "Prompt 位置", "续写"],
+      "difficulty": 1,
+      "source": "卡码笔记《Transformer 大厂面试题汇总》§8 https://notes.kamacoder.com/interview/llm/transformer_interview.html"
+    }
+  ]
+}

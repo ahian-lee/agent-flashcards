@@ -1,0 +1,273 @@
+{
+  "id": "llm-finetuning",
+  "title": "LLM 面试题库 · 模型微调卷",
+  "description": "24 张卡按专题页 11 节分层：微调价值的迁移、SFT / RLHF / RL / PPO / DPO 名词、微调与 Prompt / RAG 的选型顺序、垂类微调为何被基模抹平、SFT 与 RLHF / RL 的破局点、不建议微调的场景、收益评估与上线回归、面试追问与完整答题框架。",
+  "version": 1,
+  "updatedAt": "2026-10-27",
+  "cards": [
+    {
+      "id": "finetune-001",
+      "type": "qa",
+      "question": "基模越来越强之后，SFT / RLHF / RL 的价值发生了什么迁移？",
+      "answer": "结论是价值没有消失，只是从「补能力」转向「控行为、控偏好、控成本、控风险」。\n\n以前做 SFT 是因为基模不会客服话术、不会写某类报告、不按业务格式输出；现在这些用 Prompt 往往就能做到，辛苦调出来的垂类模型还可能被下一代基模直接追上。\n\n真正还值钱的是：固定流程里的稳定输出、行业话术与口径、小模型降本、安全拒答与合规偏好、Agent 工具调用与多步决策、有明确 reward 的代码 / 数学 / 检索任务。",
+      "explanation": "面试里别把话说死：既不能说「基模强了就不用微调」，也不能说「微调永远有用」，要给出区分标准。",
+      "tags": ["微调价值", "结论"],
+      "difficulty": 1,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§一 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-002",
+      "type": "qa",
+      "question": "SFT 的本质是什么？它适合解决哪几类问题？",
+      "answer": "SFT（Supervised Fine-Tuning，监督微调）是给模型看高质量示范，让它模仿这种回答方式，本质是「学示范」。\n\n典型样本是一条「用户问题 → 标准答案」。看多了，模型就学到：遇到退款先要订单号、再查订单状态、最后按规则判断，而不是直接下结论。\n\n它适合：输出格式不稳定、业务话术不统一、固定任务流程学不会、工具调用格式需要统一、小模型要学大模型的回答范式。",
+      "explanation": "易错点：把 SFT 当万能知识库。业务规则会变，塞进权重后记忆会过期，这类动态知识更适合 RAG 或工具查询。",
+      "tags": ["SFT", "学示范"],
+      "difficulty": 1,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§二.1 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-003",
+      "type": "qa",
+      "question": "RLHF 在做什么？它的典型流程是哪五步？",
+      "answer": "RLHF（Reinforcement Learning from Human Feedback）不直接给标准答案，而是让模型学会人类更喜欢哪种回答，本质是「学偏好」。\n\n典型流程五步：先用 SFT 得到一个基础可用模型 → 同一问题生成多个候选回答 → 人工标注哪个更好 → 用偏好数据训练 Reward Model → 再用 PPO 这类强化学习算法优化模型。\n\n它解决的是偏好问题：多个答案可能都没错，但业务更喜欢其中一种。",
+      "explanation": "易错点：以为 RLHF 是让模型更聪明。通用推理靠基模，RLHF 主要解决「都不算错时更想要哪一种」。",
+      "tags": ["RLHF", "学偏好"],
+      "difficulty": 1,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§二.2 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-004",
+      "type": "qa",
+      "question": "RL 和 RLHF 的边界在哪？",
+      "answer": "RL 比 RLHF 更宽泛：模型在环境里执行动作，环境返回奖励，训练的目标就是把这个奖励推高；不要求有人类反馈，只要能定义 reward 就能做。\n\n典型 reward 设计：代码跑通或单测通过给高奖励、报错给低奖励；数学答案正确给高奖励；Agent 调对工具、参数合法、任务完成给高奖励，调错工具或越权操作给低奖励。\n\n所以分界不是「人类喜不喜欢」，而是有没有明确的环境反馈或可验证目标。reward 模糊时硬上 RL 容易训歪。",
+      "explanation": "面试常被追问：你说要做 RL，那 reward 到底怎么定义？答不出具体信号，说明只是想要一个高级名词。",
+      "tags": ["RL", "RLHF", "名词辨析"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§二.3 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-005",
+      "type": "qa",
+      "question": "PPO 是什么？它为什么一定要限制模型别跑太远？",
+      "answer": "PPO（Proximal Policy Optimization）是强化学习优化算法，在 RLHF 里负责根据 reward 优化模型。它既不是偏好数据，也不是标注方式。\n\n必须限制的原因是大模型很脆：只追 reward 会出现奖励黑客——Reward Model 偏好长答案就疯狂输出长篇废话，偏好礼貌语气就每句话过度客气，有漏洞就学会钻漏洞。\n\nPPO 的思路是「可以优化，但别一步迈太大」，在抬高 reward 的同时尽量保留原有的语言与通用能力。",
+      "explanation": "面试只要讲清角色即可，不必推公式：优化算法 + 别偏离原模型太远，这两点说到就够。",
+      "tags": ["PPO", "奖励黑客"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§二.4 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-006",
+      "type": "qa",
+      "question": "DPO 是什么？为什么它的工程流程更轻？",
+      "answer": "DPO（Direct Preference Optimization，直接偏好优化）直接用偏好对训练模型：同一问题下 A 较差、B 更好，就让模型以后更倾向生成 B 这类答案。\n\n相比传统 RLHF，它省掉单独训练 Reward Model，也不用跑复杂的 PPO 流程，训练更稳定、工程成本更低。\n\n但它很依赖偏好数据质量：如果今天喜欢短答案、明天喜欢长答案，标注标准不一致，DPO 也会学乱。",
+      "explanation": "易错点：以为 DPO 不需要偏好数据。它恰恰最依赖偏好对的干净与一致。",
+      "tags": ["DPO", "偏好优化"],
+      "difficulty": 1,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§二.5 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-007",
+      "type": "cloze",
+      "question": "一句话区分：SFT 是让模型 {{c1::学示范}}，RLHF 是让模型 {{c2::学偏好}}，而 RL 的前提是 {{c3::能定义 reward}}。",
+      "answer": "SFT 拿「问题 → 标准答案」的示范教模型怎么答；RLHF 让人工对多个候选回答排序，教模型人类更喜欢哪一种；RL 更宽泛，只要环境能给出明确奖励或存在可验证目标就能训练，并不要求有人类反馈。",
+      "explanation": "三个词各自回答不同问题：怎么答、更想要哪种答、怎么把事做成。混淆它们，后面的选型就无从谈起。",
+      "tags": ["名词", "SFT", "RLHF", "RL"],
+      "difficulty": 1,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§二 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-008",
+      "type": "mcq",
+      "question": "关于这几个名词，下面哪种说法是准确的？",
+      "choices": [
+        "RLHF 解决的是偏好问题：多个答案可能都没错，但业务更偏好其中一种",
+        "PPO 是一种人工标注偏好数据的方法",
+        "DPO 必须先训练 Reward Model，再用 PPO 优化模型",
+        "SFT 的本质是把会频繁变化的业务知识写进模型权重"
+      ],
+      "answerIndex": 0,
+      "explanation": "PPO 是优化算法，不是标注方法；DPO 恰恰省掉了 Reward Model 与 PPO 流程；SFT 学的是示范（怎么答），把会变的业务知识塞进权重会过期，那类内容更适合 RAG 或工具查询。",
+      "tags": ["名词辨析", "RLHF", "PPO", "DPO"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§二 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-009",
+      "type": "qa",
+      "question": "SFT 和 Prompt Engineering 该怎么选？",
+      "answer": "顺序是先 Prompt，后 SFT。\n\n如果只是让输出更清晰、更结构化、按 JSON 返回、先结论后解释、不知道就说不知道、要引用来源，这些都先用 Prompt 约束；能稳定解决就不训练。\n\n只有当 Prompt 越写越长、越来越脆、效果不稳定，而场景又高频固定时，才考虑 SFT。因为训练有成本：准备数据、清洗数据、跑训练、评测、上线、回滚，不是写几条样本就完事。",
+      "explanation": "易错点：只算训练成本，不算维护成本。模型一旦上线，版本管理、评测、回滚都是长期负担。",
+      "tags": ["选型", "Prompt", "SFT"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§三.1、§十.2 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-010",
+      "type": "mcq",
+      "question": "下面哪个场景应当优先考虑 RAG 或工具，而不是 SFT？",
+      "choices": [
+        "模型输出 JSON 时字段偶尔丢失、枚举乱填",
+        "产品文档、公司制度、价格规则经常更新，回答要引用最新条款",
+        "客服话术不统一，需要统一成品牌口径",
+        "固定场景想用小模型承接大部分流量以降低单次成本"
+      ],
+      "answerIndex": 1,
+      "explanation": "知识会变是 RAG 的强项：文档更新后重新入库即可生效；训进模型则更新麻烦，还容易出现旧知识残留。其余三项分别属于格式稳定性、话术口径和成本问题，才是 SFT 的用武之地。",
+      "tags": ["选型", "RAG", "SFT"],
+      "difficulty": 1,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§三.2、§十.1 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-011",
+      "type": "cloze",
+      "question": "选型口诀：知识问题优先 {{c1::RAG 或工具查询}}，行为不稳定再考虑 {{c2::SFT}}，多个答案都对但业务有偏好时用 {{c3::DPO / RLHF}}。",
+      "answer": "知识频繁变化、需要引用来源时优先 RAG 或工具，重新入库即可生效；模型知道规则但输出不稳时用 SFT 把行为压稳；几个答案都不算错、业务更想要某一种（先安抚还是先讲规则）时用 DPO / RLHF；只有任务存在单测、答案正确性、工具调用成功这类客观反馈时，才值得上更重的 RL。",
+      "explanation": "顺序不能倒：先 Prompt，再 RAG / 工具，然后 SFT，最后才是偏好优化与 RL。每往后一步，成本与维护负担都更高。",
+      "tags": ["选型", "口诀"],
+      "difficulty": 1,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§三 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-012",
+      "type": "qa",
+      "question": "为什么很多垂类微调会被基模抹平？",
+      "answer": "被抹平的是低壁垒微调，四类典型原因：\n- 只补通用知识：用几千条普通问答教 Java、MySQL、Redis，本就在基模能力范围内，下一代基模参数更大、数据更多、后训练更强，直接追上\n- 只调风格没有评测：说不清提升了多少、在哪些 case 提升，只剩「感觉更像客服」\n- 数据质量低：低质量、过时、互相矛盾的答案一起学进去，反而拖累模型\n- 没有业务闭环的 RL：缺环境、缺 reward、缺评测、缺线上反馈，只剩一个名词\n\n有护城河的是行为、偏好、成本与风险控制。",
+      "explanation": "答这题要给区分标准，而不是一句「会被抹平」。被抹平的是低壁垒，不是微调本身。",
+      "tags": ["基模抹平", "微调价值"],
+      "difficulty": 3,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§四 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-013",
+      "type": "qa",
+      "question": "为什么说数据质量低的 SFT 反而会拖累模型？",
+      "answer": "SFT 不是样本越多越好。数据里混着大量低质量答案、过时答案、互相矛盾的答案，模型会照单全收一起学进去。\n\n典型翻车方式：把客服聊天记录直接拿来训，里面有坏话术、错误处理流程、已经作废的历史规则、人工客服的随意表达，甚至用户隐私信息。不清洗就训练，效果不稳定几乎是必然。\n\n很多垂类微调失败不是模型不行，而是数据太脏；不清洗就训练等于把噪声一起固化进权重。",
+      "explanation": "面试追问会落到「你的数据怎么洗」：去重、纠错、删过时与冲突、脱敏，都是训练前的必做项。",
+      "tags": ["数据质量", "SFT", "失败原因"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§四.3 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-014",
+      "type": "mcq",
+      "question": "做 Agent 的 RL 时，面试官最可能顺着往下追问什么？",
+      "choices": [
+        "模型参数量要多大才够用",
+        "训练要用多少张卡、跑多少天",
+        "reward 怎么定义、成功失败怎么判定、中间步骤怎么给分、怎么防止钻 reward 漏洞",
+        "要不要先把已有的 SFT 数据全部删掉"
+      ],
+      "answerIndex": 2,
+      "explanation": "缺环境、缺 reward、缺评测、缺线上反馈，RL 就只剩一个名词。面试官会沿着 reward 定义、成败判定、中间步骤给分、工具调用出错的惩罚、防 reward 钻空子、线上策略退化监控往下问，答不上来说明还没真正想清楚。",
+      "tags": ["RL", "Agent", "业务闭环"],
+      "difficulty": 3,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§四.4 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-015",
+      "type": "qa",
+      "question": "SFT 的破局点具体是哪四个抓手？",
+      "answer": "SFT 的价值从「让模型知道更多」变成「让模型在固定场景里稳定按你要的方式做事」，四个抓手：\n- 固定输出格式：生产系统要字段不丢、枚举不乱、置信度不瞎填\n- 固定业务流程：先识别意图 → 要订单号 → 查订单 → 判规则 → 高风险动作要确认\n- 行业话术与品牌口径：金融、医疗、政务、教育对措辞很敏感\n- 小模型降本：大模型造高质量示范数据，小模型接住大部分流量，复杂问题再路由给大模型",
+      "explanation": "注意第四点是成本价值而不是效果价值：小模型的目标不是超过最强基模，而是在固定场景里用更低成本达到够用。",
+      "tags": ["SFT", "控行为", "降本"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§五 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-016",
+      "type": "qa",
+      "question": "SFT 学会了正确流程，就能替代权限和审批吗？",
+      "answer": "不能。SFT 只能让模型更倾向于走正确流程，替代不了权限、审批、回滚这些工程约束。\n\n以退款为例，SFT 可以训出「先识别意图、再要订单号、调工具查订单、判断规则、高风险动作要求确认」的稳定范式，但真正执行动作时，工具调用与高风险操作仍然必须有工程层拦截。\n\n同理，RLHF 也不是安全保险箱：训练改变的是概率，兜底仍要靠系统。",
+      "explanation": "这句话在面试里说出来，比多背三个算法名词更能体现你落过地。",
+      "tags": ["SFT", "工程约束", "护栏"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§五.2 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-017",
+      "type": "qa",
+      "question": "RLHF 的价值为什么是「对齐偏好」而不是「让模型更聪明」？",
+      "answer": "基模越来越强，通用推理能力会被持续提升，但偏好不一定会自动符合你的业务。\n\n很多业务问题没有唯一正确答案，只有业务偏好：用户投诉是先道歉还是先解释规则、要不要主动给补偿、什么情况下转人工、拒绝用户时怎么表达、客服回答是强调用户体验还是强调平台规则。\n\nSFT 能学到一些示范，但更本质的是让模型知道「业务更喜欢哪种回答」，这就是 RLHF 或 DPO 的空间。",
+      "explanation": "区分关键：SFT 学「这样答」，RLHF 学「两种都能答时更该选哪种」。",
+      "tags": ["RLHF", "偏好对齐"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§六.1、§十.3 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-018",
+      "type": "qa",
+      "question": "Agent 场景里 RL 的价值体现在哪？",
+      "answer": "Agent 不是只生成一句话，而是要做一串动作：理解任务 → 选择工具 → 填参数 → 读 Observation → 判断下一步 → 输出结果，每一步都可能错：工具选错、参数填错、检索策略错、过早下结论、不该执行写操作却执行了。\n\n只要能把任务完成率、工具调用成功率、参数是否合法、用户是否确认、人工接管比例定义清楚，这些指标就能变成训练反馈。此时 RL 的目标不是让模型更会聊天，而是让 Agent 在多步任务里更会做决策。",
+      "explanation": "前提是有清晰 reward 和安全边界；没有可观测的中间信号，多步决策的 RL 就无从下手。",
+      "tags": ["RL", "Agent", "多步决策"],
+      "difficulty": 3,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§六.2、§十.7 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-019",
+      "type": "qa",
+      "question": "高风险场景做了 RLHF 就够了吗？还要配什么？",
+      "answer": "不够。RLHF / RL 不是安全保险箱，尤其面对金融、医疗、法律、退款、删数据、对外发信这类高风险动作，不能说「我做了 RLHF，模型应该会安全」。\n\n高风险动作必须配合：权限控制、二次确认、审批流、幂等机制、回滚机制、操作日志。\n\n训练提高的是倾向，系统守住的才是底线。面试里主动讲出这层，能说明你不是只会背算法名词。",
+      "explanation": "易错点：把对齐当成安全。对齐降低的是概率，工程约束兜住的才是底线。",
+      "tags": ["高风险", "护栏", "RLHF"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§六.4 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-020",
+      "type": "qa",
+      "question": "DPO 为什么现在经常被提到？它的边界在哪？",
+      "answer": "因为工程上更轻。传统 RLHF 是一条长流水线：SFT 打底 → 收偏好数据 → 训奖励模型 → 跑 PPO 优化 → 评测与调参，每一步都有坑：RM 会不会学偏、PPO 稳不稳、KL 怎么控、训练成本能不能接受。\n\nDPO 直接给偏好对（chosen 优于 rejected），训练模型更偏向 chosen，所以更容易落地，尤其适合已有明确偏好数据的场景，比如好客服回答 vs 差回答、合规 vs 不合规、简洁 vs 啰嗦。\n\n边界是：偏好数据质量差，DPO 也救不了；任务需要和环境多轮交互时，静态偏好对不够，替代不了真实环境反馈。",
+      "explanation": "一句话总结：DPO 降低的是工程门槛，不是降低对数据质量的要求。",
+      "tags": ["DPO", "工程成本", "边界"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§七 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-021",
+      "type": "mcq",
+      "question": "DPO 相比传统 RLHF，下面哪条描述最准确？",
+      "choices": [
+        "DPO 训练时仍然必须有一个独立的 Reward Model 参与打分",
+        "DPO 能完全替代环境交互，多步 Agent 任务只靠它就够了",
+        "DPO 对偏好数据质量不敏感，标注标准前后不一致也没关系",
+        "DPO 用偏好对直接优化模型，省掉 Reward Model 与 PPO 流程，但仍依赖高质量偏好数据"
+      ],
+      "answerIndex": 3,
+      "explanation": "DPO 降低的是工程门槛，不是降低对数据的要求：它省掉显式 Reward Model 与 PPO 的复杂流程，却仍依赖干净、标准一致的偏好对；需要和环境多轮交互的任务，光靠静态偏好对也不够。",
+      "tags": ["DPO", "RLHF", "对比"],
+      "difficulty": 3,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§七、§十.4 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-022",
+      "type": "qa",
+      "question": "哪些场景不建议做微调？",
+      "answer": "五类要谨慎：\n- Prompt 能解决的：只是格式、语气、结构微调，先别上 SFT；训练会带来数据、成本、版本管理、评测、回滚问题\n- 知识更新频繁的：产品规则、政策条款、价格、库存、组织架构，优先 RAG 或工具，否则模型里残留旧知识\n- 没有评测集的：不知道提升在哪，只会得到「感觉好了一点」\n- 数据质量差的：先治理再训，否则等于把问题一起学进权重\n- 业务变化很快的：重训成本扛不住，先用 Prompt、配置、RAG、规则引擎，等流程稳定再训",
+      "explanation": "面试官问这题是在看边界感：只会说「能做」的人，通常没真正落过地。",
+      "tags": ["不建议微调", "反模式"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§八 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-023",
+      "type": "cloze",
+      "question": "判断微调有没有收益要看四类指标：任务指标、质量指标、{{c1::成本指标}}和{{c2::风险指标}}；此外每次改 Prompt、RAG、工具或模型都要跑{{c3::回归测试}}。",
+      "answer": "任务指标看分类准确率、抽取 F1、工具调用成功率、JSON 合法率、任务完成率；质量指标看幻觉率、无证据回答率、格式错误率、拒答准确率、人工接管率；成本指标看单次调用成本、延迟、小模型承接流量；风险指标看越权动作率、错误放行率、审批触发率、回滚次数、投诉率。",
+      "explanation": "只报「效果变好」不算结论；要说清哪类指标动了、动了多少、有没有把别的场景搞坏。",
+      "tags": ["评测", "指标", "回归测试"],
+      "difficulty": 2,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§九 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    },
+    {
+      "id": "finetune-024",
+      "type": "qa",
+      "question": "微调完成后应该怎么上线？",
+      "answer": "不能直接全量替换。要做灰度发布、A/B 测试、持续监控指标、保留回滚方案。\n\n上线后重点盯：幻觉率、格式错误率、人工接管率、投诉率，以及成本和延迟。\n\n完整答题可以这样收口：先看这件事能不能靠 Prompt、RAG、规则或工具摆平；知识问题优先 RAG，行为稳定性问题再考虑 SFT，偏好对齐问题考虑 DPO / RLHF，有可验证 reward 才上更重的 RL；最后用评测集、线上指标、成本收益和风险控制回答「值不值得做」。",
+      "explanation": "这题是整卷的收口题：能把它答成一条决策链，而不是名词罗列，才算理解到位。",
+      "tags": ["上线", "灰度发布", "答题框架"],
+      "difficulty": 3,
+      "source": "卡码笔记《SFT、RLHF、DPO 面试详解》§十.8、§十一 https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html"
+    }
+  ]
+}

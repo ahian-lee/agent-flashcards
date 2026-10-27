@@ -1,0 +1,344 @@
+{
+  "id": "llm-agent",
+  "title": "LLM 面试题库 · Agent 智能体卷",
+  "description": "基于卡码笔记《Agent 大厂面试题汇总》正文的 24 张卡：LLM vs Agent、Workflow vs Agent、ReAct/Plan-and-Execute/Reflection/Multi-Agent、Function Call 四步与并行、MCP 的 N×M 与三层安全、Skills 与 Prompt、A2A、记忆分层与压缩、Prompt Injection、Agentic RAG、企业级系统设计。",
+  "version": 1,
+  "updatedAt": "2026-10-27",
+  "cards": [
+    {
+      "id": "agent-001",
+      "type": "qa",
+      "question": "LLM 和 Agent 的本质区别是什么？",
+      "answer": "**LLM 告诉你怎么做，Agent 直接帮你做完。**\n\n正文用「查天气并取消跑步计划」举例：LLM 只会回复「你可以打开天气 App 查一下，如果降雨概率超过 60% 建议取消」；Agent 会依次调用天气 API、日历 API 找到计划、删除计划，最后回复「明天北京有雨，已为您取消」。\n\nAgent 由四个模块组成：LLM（大脑）、规划（拆解与排序）、记忆（短期上下文与长期知识）、工具（调用外部 API，是手脚）。面试别只说「Agent 就是 LLM 加工具」，要讲清四模块如何在循环中协作。",
+      "explanation": "易错点：只答「Agent 会调工具」。真正的分水岭是「谁决定下一步」——LLM 只给建议，Agent 自己规划并执行。",
+      "tags": [
+        "LLM vs Agent",
+        "四模块"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§1 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-002",
+      "type": "mcq",
+      "question": "下面哪一项不属于正文所说的 Agent 四模块？",
+      "choices": [
+        "LLM（大脑，负责理解与推理）",
+        "规划模块（负责任务拆解与步骤排序）",
+        "记忆模块（短期上下文与长期知识）",
+        "前端渲染模块（负责页面展示）"
+      ],
+      "answerIndex": 3,
+      "explanation": "正文给的四模块是 LLM、规划、记忆、工具。工具模块负责调用外部 API、数据库、代码执行器，是 Agent 的「手和脚」；前端渲染不在其中。",
+      "tags": [
+        "四模块"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§1 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-003",
+      "type": "qa",
+      "question": "Agent 和 Workflow 的核心区别是什么？",
+      "answer": "**核心只有一点：控制权在谁手里。**\n\n- Workflow：流程提前写死在代码里，LLM 只是某些节点的处理器。退款例子：接收申请→LLM 提取信息→查订单库→LLM 判断政策→执行退款或生成拒绝邮件→发通知，每个 if/else 和顺序都由开发者预先定义。\n- Agent：接收目标后自主规划路径。同一个退款申请，它自己决定先 `read_ticket()`、再 `search_policy_doc()`、再 `create_approval_request()`。\n\n所以同一个 Agent 面对不同申请可能走完全不同的路径。",
+      "explanation": "易错点：把「用了 LLM」当成 Agent。判断标准是路径能否预先写死，能写死就不是 Agent。",
+      "tags": [
+        "Workflow vs Agent",
+        "控制权"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§2 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-004",
+      "type": "qa",
+      "question": "Workflow 和 Agent 的量化差异与混合架构怎么讲？",
+      "answer": "**量化对比**：控制者——Workflow 是代码/开发者，Agent 是 LLM；Token 消耗——约 1x vs 4–8x；可预测性——高 vs 低；灵活性——低 vs 高；适合任务——固定流程 vs 开放式目标；调试——容易 vs 困难；典型场景——订单处理/报表 vs 研究分析/客服。\n\n**生产上最常见的是混合架构**：Workflow 提供稳定骨架，Agent 处理异常和复杂情况。比如智能客服：简单问题走 Workflow，复杂问题启动 Agent，投诉工单直接转人工。面试先说区别，再强调混合才是落地姿势。",
+      "explanation": "加分点：主动说出「4–8x token」和「混合架构」，面试官会判断你做过真实项目，而不只是背概念。",
+      "tags": [
+        "Workflow vs Agent",
+        "混合架构"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§2 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-005",
+      "type": "qa",
+      "question": "ReAct 的循环长什么样？优缺点各是什么？",
+      "answer": "**三步循环**：Thought（思考）→ Action（行动）→ Observation（观察）→ 回到 Thought，直到任务完成。\n\n正文示例：Thought「用户想查北京明天天气，需要调用天气工具」→ Action `get_weather(city=\"北京\", date=\"明天\")` → Observation 返回中雨、14–20°C → Thought「天气查到了」→ 结束并生成最终回答。\n\n**优点**：透明可审计、灵活适应、通用性强。**缺点**：Token 消耗大（每步完整推理）、可能死循环、延迟高（每次 Action 等 LLM 响应）。",
+      "explanation": "易错点：把 ReAct 说成新模型。它本质是 Prompt 范式，循环的是文本，换任何支持 tool use 的模型都能实现。",
+      "tags": [
+        "ReAct",
+        "循环"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-006",
+      "type": "mcq",
+      "question": "防止 ReAct 死循环，下面哪种做法最不可靠？",
+      "choices": [
+        "设置最大步数限制（正文示例 max_steps=15）",
+        "检测连续 3 次相同工具且参数相同的重复动作",
+        "给整个任务设置最大执行时间",
+        "不做任何限制，让模型自己判断何时停止"
+      ],
+      "answerIndex": 3,
+      "explanation": "正文给了三个方法：最大步数限制、重复动作检测、超时控制。示例代码里 `max_steps=15`，连续 3 次相同动作就退出循环并让模型基于已有信息总结。完全不限制正是死循环和烧钱的根源。",
+      "tags": [
+        "ReAct",
+        "死循环"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-007",
+      "type": "cloze",
+      "question": "ReAct 的单步循环是 Thought → {{c1::Action}} → {{c2::Observation}}，再回到 Thought。",
+      "answer": "Thought 先推理下一步做什么，Action 调用工具，Observation 是工具返回的真实结果。三者在同一个上下文里交错，让观察结果纠正后续推理。正文强调：它不是新模型，而是一种 Prompt / 轨迹格式。",
+      "explanation": "易错点：漏掉 Observation。没有真实观察回灌，ReAct 就退化成纯 CoT，无法根据工具结果纠偏。",
+      "tags": [
+        "ReAct"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-008",
+      "type": "qa",
+      "question": "Plan-and-Execute 和 Reflection 各适合什么场景？",
+      "answer": "**Plan-and-Execute**：ReAct 每步都重新思考全局，Token 消耗大；它先规划再逐步执行。两阶段：Planner 一次生成完整计划，Executor 每步只做当前任务。正文的 Token 对比是每步思考全局约 100% vs 规划一次约 20%；计划不合理时要加「重新规划检查点」。\n\n**Reflection**：一个 Agent 生成、另一个审查，循环到质量达标。正文用代码 Review 类比：Writer 生成 → Reviewer 发现问题（安全、性能）→ Writer 修改 → Reviewer 确认。适合代码、法律文书、论文、创意写作等高质量场景。",
+      "explanation": "加分点：Reflection 还能用于自我校正幻觉——发现事实存疑时触发「验证反思」，调用搜索工具核实。",
+      "tags": [
+        "Plan-and-Execute",
+        "Reflection"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-009",
+      "type": "qa",
+      "question": "什么时候该上 Multi-Agent，最大的坑是什么？",
+      "answer": "**编排**：Orchestrator 理解需求、分配任务、汇总结果，下面挂 Research Agent（搜集资料）、Coder Agent（写代码跑测试）、Reviewer Agent（审查与安全检查）。\n\n**框架**：LangGraph（图编排、状态机）、CrewAI（角色化分工、上手简单）、OpenAI SDK（handoff、原生工具调用）、AutoGen（对话式多 Agent）。\n\n**最大的坑**：Anthropic 提醒不要过早引入 Multi-Agent——强单 Agent 常比多个简单 Agent 更稳定、更省钱。只有明确需要并行或专业分工才上。",
+      "explanation": "易错点：把「多 Agent」当成更高级。多数任务单 Agent 加工具就够了，多 Agent 的收益必须能覆盖协调成本。",
+      "tags": [
+        "Multi-Agent",
+        "编排"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§3 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-010",
+      "type": "qa",
+      "question": "Function Call 的本质是什么？模型真的执行函数吗？",
+      "answer": "**LLM 自己并不执行函数。**它只输出结构化的调用指令——「我想调用什么函数、传什么参数」，真正执行的是你的应用程序。\n\n正文强调这个设计保证了安全性：LLM 无法绕过你的代码直接操作系统。\n\n**四步流程**：① 定义工具（`tools` 里写 name / description / parameters）；② LLM 判断并生成 `tool_calls`（结构化 JSON，不是普通文本）；③ 你的代码解析并执行，按 `tool_call_id` 回填结果；④ 把结果以 `role: \"tool\"` 传回 LLM，生成最终回答。",
+      "explanation": "易错点：以为模型在服务端跑函数。模型只产出 JSON 指令，执行、鉴权、错误处理都在你的应用里。",
+      "tags": [
+        "Function Call",
+        "四步流程"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§4 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-011",
+      "type": "qa",
+      "question": "Function Call 的并行调用怎么讲清楚？",
+      "answer": "**一次返回多个 tool_calls**，每个带独立 `id` 和参数，正文示例同时调 `get_weather`、`search_calendar`、`get_traffic`。\n\n**关键规则**：每个 `call_id` 都要执行并按 id 一一回填结果，失败的也要以错误消息回传，不能静默丢弃——缺任何一个 call_id 的结果，模型都无法对齐，后续推理会全错。\n\n**收益**：串行执行 T = T1 + T2 + T3，并行执行 T = max(T1, T2, T3)，延迟大幅降低。有依赖关系的调用不能并行，要等上一轮结果。",
+      "explanation": "易错点：只执行第一个或合并调用。并行调用的价值在延迟，但必须逐 id 回填，否则模型上下文里的工具结果对不上号。",
+      "tags": [
+        "Function Call",
+        "并行调用"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§4 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-012",
+      "type": "mcq",
+      "question": "关于不同厂商的工具调用格式，下面哪项说法正确？",
+      "choices": [
+        "OpenAI 用 tools + function，Anthropic 用 tools + input_schema",
+        "OpenAI 和 Anthropic 的格式完全一样",
+        "Anthropic 的结果回传用 role: \"tool\"",
+        "工具调用结果是普通文本，不需要结构化"
+      ],
+      "answerIndex": 0,
+      "explanation": "正文对比：OpenAI 的工具定义是 `tools + function`，调用输出是 `tool_calls` 数组，结果回传 `role: \"tool\"`；Anthropic 的工具定义是 `tools + input_schema`，调用输出是 `tool_use` content block，结果回传 `role: \"user\"` + `tool_result` content block。两边格式不同，不能混用。",
+      "tags": [
+        "Function Call",
+        "厂商格式"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§4 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-013",
+      "type": "qa",
+      "question": "MCP 解决什么问题？为什么说是 N×M 变 N+M？",
+      "answer": "**解决 N×M 集成爆炸。**没有 MCP 时，每个 AI 应用要跟每个外部服务单独写一套集成代码：3 个应用 × 3 个工具 = 9 套，10 个应用 × 20 个工具 = 200 套，维护成本爆炸。\n\nMCP 把它变成 **N+M**：每个应用只需接入 MCP 协议，每个工具只需实现一个 MCP Server，3+3=6 套。\n\n**面试追问**：MCP 和 Function Call 的本质区别是「标准化」——Function Call 是各厂商不统一的 API 协议，MCP 是开放的通信标准，工具方实现一次，所有支持 MCP 的应用都能用。",
+      "explanation": "易错点：把 MCP 说成「另一个 Function Call」。二者层次不同：Function Call 是调用机制，MCP 是工具集成标准。",
+      "tags": [
+        "MCP",
+        "N×M"
+      ],
+      "difficulty": 1,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§5 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-014",
+      "type": "qa",
+      "question": "MCP 的 Host / Client / Server 与三类能力怎么讲？",
+      "answer": "**三个角色**：Host 是你用的 AI 应用（Claude Desktop / Cursor / 自研 Agent）；Client 住在 Host 里，与某个 Server 一对一通信；Server 由工具方实现，暴露能力。一个 Host 可挂多个 Client。\n\n**三类能力**：Tools 是可执行操作（发消息、查数据、写文件）；Resources 是可读数据源（文档、代码库、表结构）；Prompts 是预设模板（如代码审查模板）。\n\n**要点**：Tools 由模型决定调用，Resources 更像应用挂载的上下文，Prompts 常由用户显式选择。说清「谁触发」比背名词得分高。",
+      "explanation": "易错点：把三类能力混为一谈。Tools 由模型决定调用，Resources 更像挂载的上下文，Prompts 常由用户显式选择——说清「谁触发」比背名词得分高。",
+      "tags": [
+        "MCP",
+        "三类能力"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§5 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-015",
+      "type": "cloze",
+      "question": "MCP 消息基于 {{c1::JSON-RPC 2.0}} 规范；标准传输有两种：本地 {{c2::stdio}}，远程 {{c3::HTTP + SSE}}。",
+      "answer": "正文给的底层协议：本地通信用 stdio（标准输入输出，最简单）；远程通信用 HTTP + SSE（Server-Sent Events，支持流式）；消息格式基于 JSON-RPC 2.0。面试被追问「MCP 基于什么协议实现」时，这三个点要能直接说出来。",
+      "explanation": "易错点：只答「HTTP」。MCP 本地默认 stdio，远程才走 HTTP + SSE，消息层是 JSON-RPC 2.0。",
+      "tags": [
+        "MCP",
+        "传输"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§5 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-016",
+      "type": "qa",
+      "question": "MCP 的安全怎么设计，只靠能力声明够吗？",
+      "answer": "**正文给了三层安全机制，只靠能力声明不够。**\n\n- 第一层能力声明：Server 明确声明提供哪些工具，Agent 只能调用声明过的工具，无法越权；\n- 第二层授权控制：敏感操作要求人工确认，MCP Host 管理 Server 的授权范围；\n- 第三层审计追踪：所有工具调用都有日志，可追溯每次 Agent 行为。\n\n**面试要点**：能力声明解决「能调什么」，但解决不了「该不该调」。高风险动作仍要靠 Host 的授权控制 + 人工审批 + 审计日志兜底。",
+      "explanation": "易错点：以为声明了工具清单就安全了。声明只限定范围，不判断风险；审批与审计是另外两层。",
+      "tags": [
+        "MCP",
+        "安全"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§5 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-017",
+      "type": "qa",
+      "question": "Skills 和 System Prompt 到底差在哪？",
+      "answer": "**四个维度**：作用范围——System Prompt 全局一直生效，Skills 按需激活；内容——通用行为规范 vs 特定领域指导；激活方式——每次加载 vs 匹配场景才加载；可维护性——随功能变复杂 vs 模块化独立。\n\n正文示例：给 Agent 一堆 MCP 工具还不够，它还要知道代码审查标准、写 SQL 的 DBA 实践、回复客户的品牌语气——这些领域专家经验就是 Skills 编码的东西。\n\n**激活机制**：输入 → 扫描 Skills → 匹配 triggers 或语义相似度 → 把 Skill 注入上下文。",
+      "explanation": "易错点：把 Skills 当成长 Prompt。Skills 是带触发条件的模块化知识包（身份定位 + 工作流程 + 注意事项 + 输出规范），不是每次都塞进上下文。",
+      "tags": [
+        "Skills",
+        "System Prompt"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§6 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-018",
+      "type": "qa",
+      "question": "Function Call、MCP、Skills 三者怎么分工协作？",
+      "answer": "**一句话**：Skills 决定「怎么想」→ MCP 决定「用什么」→ Function Call 决定「怎么调」。\n\n**三维对比**：解决的问题——调用函数 / 工具集成标准化 / 领域知识编码；运行位置——你的应用 / 外部 Server / Agent 上下文；本质——API 协议 / 通信标准 / 提示词扩展；外部调用——有 / 有 / 无。\n\n**完整链路**（「审查 agent.py」）：命中「审查」→ 加载 Code_Review Skill → 按 Skill 规划读文件、跑 linter → 发现 filesystem 与 linter 两个 MCP Server → Function Call 逐个调用回填 → 按 Skill 规范出报告。",
+      "explanation": "易错点：把三者说成替代关系。它们是调用机制、接入标准、知识封装三层，缺一层能跑，规模化会散架。",
+      "tags": [
+        "Function Call",
+        "MCP",
+        "Skills"
+      ],
+      "difficulty": 3,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§7 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-019",
+      "type": "qa",
+      "question": "A2A 是什么，它和 MCP 是什么关系？",
+      "answer": "**MCP 管纵向**：Agent 到工具/数据/API。**A2A 管横向**：Agent 到 Agent 的委托与协作。互补而非替代。\n\n**为什么 MCP 不够**：跨框架 Agent 不知道对方有什么能力、怎么派活、进度如何。A2A 用 Agent Card 做能力发现，Task 承载有生命周期的任务，Message 沟通、Artifact 交付；传输走 HTTP + JSON-RPC，支持轮询/SSE/Webhook。\n\n**关键**：远端 Agent 对调用方不透明，无需共享内部记忆与工具。一句话：内部用 MCP 拿工具，Agent 之间用 A2A 分工。",
+      "explanation": "易错点：把 A2A 当成 MCP 的替代品。二者是纵向/横向两层，实际系统往往同时用。",
+      "tags": [
+        "A2A",
+        "MCP"
+      ],
+      "difficulty": 3,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§8 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-020",
+      "type": "qa",
+      "question": "Agent 的记忆系统怎么设计，上下文满了怎么办？",
+      "answer": "**两层记忆**：上下文窗口存当前对话、任务状态、Skill、工具历史，容量有限（正文举例 128K）；外部记忆分三类——向量库（偏好、历史经验，语义检索）、关系库（结构化事实、用户档案，精确查询）、KV（任务状态、中间结果，极快读写）。\n\n**压缩三策略**：滑动窗口、摘要压缩、重要性过滤；压缩后归档，下次再检索回来。\n\n**读写时机**：任务完成存结果、给个人信息存偏好、发现新知识更新库、出错存失败原因；任务开始加载偏好与背景、遇陌生问题检索历史、需核查时检索已知信息。",
+      "explanation": "易错点：只说「用向量库」。记忆要按用途分层：语义偏好进向量库、结构化事实进关系库、任务状态进 KV。",
+      "tags": [
+        "记忆系统",
+        "上下文压缩"
+      ],
+      "difficulty": 3,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§9 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-021",
+      "type": "cloze",
+      "question": "Agent 安全的两条底线是最小权限和 {{c1::Human in the Loop}}；必须人工审批的操作包括删除数据、发送外部邮件、{{c2::修改权限配置}}、超过阈值的资金操作。",
+      "answer": "正文的核心防御是最小权限 + Human in the Loop：读任务只给 SELECT 不给 DELETE，MCP Server 声明工具时限制操作范围，生产/测试用不同凭证；高风险操作暂停并请求人类确认。必须人工审批的四类操作就是删除数据、发送外部邮件、修改权限配置、超过阈值的资金操作。",
+      "explanation": "易错点：把 HITL 当成流程负担。它的价值是把不可逆、高金额、影响面大的动作拦在人工确认这一层。",
+      "tags": [
+        "安全",
+        "HITL"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§10 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-022",
+      "type": "qa",
+      "question": "RAG 和 Agent 是什么关系，Agentic RAG 强在哪？",
+      "answer": "**别把两者对立**：RAG 目的是补知识，流程固定（检索→生成），只用检索工具、无自主性，适合知识问答；Agent 目的是完成任务，流程动态（思考→行动），可用任意工具、有自主性，适合复杂多步任务。\n\n**RAG 是 Agent 的一个工具**：需要知识就调 RAG，需要操作就调 API/数据库，需要计算就调代码执行器。\n\n**Agentic RAG**：普通 RAG 固定检索一次，结果不好也硬生成；Agentic RAG 自己判断检索什么、够不够、不够就换角度再检索，适合法律/医疗/金融等复杂问答。简单问答用普通 RAG 就够，别过度设计。",
+      "explanation": "加分点：说出「RAG 是 Agent 的工具」比单纯对比两者区别更有深度；再补一句「简单问答别上 Agentic RAG」体现工程判断。",
+      "tags": [
+        "RAG vs Agent",
+        "Agentic RAG"
+      ],
+      "difficulty": 2,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§11 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-023",
+      "type": "qa",
+      "question": "面试让设计企业级 Agent 系统，你按哪几层讲？",
+      "answer": "**按正文的四模块 + 安全可靠性展开**：\n\n1. 目标与边界：解决什么任务、哪些动作允许、哪些必须人工审批；\n2. LLM 与规划：意图理解、任务拆解、步骤排序、终止条件；\n3. 工具层：工具清单与 schema、失败重试与降级、幂等；\n4. 记忆层：上下文窗口、外部向量库/关系库/KV；\n5. 安全与可靠性：最小权限、HITL、Prompt Injection 防御、超时与回滚；\n6. 评估与观测：任务成功率、工具调用成功率、trace、成本。\n\n**答题顺序**：先讲清目标与边界，再讲循环和工具，最后落到安全与评估——面试官最想听的是「你怎么防止它乱来」。",
+      "explanation": "易错点：一上来讲框架选型。企业级系统先讲边界、权限、失败处理，再讲模型和框架。",
+      "tags": [
+        "系统设计",
+        "企业级"
+      ],
+      "difficulty": 3,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§1–§10 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    },
+    {
+      "id": "agent-024",
+      "type": "mcq",
+      "question": "生产环境 Agent 最该提前防的坑是哪个组合？",
+      "choices": [
+        "无限循环 + 越权操作 + 无审计日志",
+        "模型参数量不够 + 训练数据太少",
+        "Prompt 写得太短 + 温度设得太低",
+        "工具数量太多 + 模型上下文太长"
+      ],
+      "answerIndex": 0,
+      "explanation": "正文的安全威胁模型与可靠性设计正好对应：资源滥用（死循环疯狂调 API 烧钱）、权限越界（被诱导删数据）、数据泄露/无法追溯（没有审计日志）。模型规模、Prompt 长短、工具数量都不是「坑」的核心；缺预算上限、权限边界和日志才是。",
+      "tags": [
+        "生产环境",
+        "失败模式"
+      ],
+      "difficulty": 3,
+      "source": "卡码笔记《Agent 大厂面试题汇总》§10 https://notes.kamacoder.com/interview/llm/agent_interview.html"
+    }
+  ]
+}

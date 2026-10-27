@@ -1,0 +1,44 @@
+{
+  "id": "agent-interview",
+  "title": "Agent 面试题库",
+  "description": "内置兜底内容：面试高频问题的答题框架。运行 npm run sync:content 后会替换为完整题库。",
+  "version": 1,
+  "cards": [
+    {
+      "id": "fallback-interview-001",
+      "type": "qa",
+      "question": "面试问「怎么评估一个 Agent 的效果」，你会怎么答？",
+      "answer": "分三层答：\n\n- **单步能力**：工具选择准确率、参数正确率、检索命中率。\n- **任务级**：端到端成功率、平均步数、人工接管率、成本与 P95 延迟。\n- **线上质量**：失败归因分布（规划错 / 工具错 / 上下文错）、用户满意度、回归集通过率。\n\n最后补一句取舍：离线看成功率，线上看成本与人工接管率。",
+      "explanation": "追问常见方向：怎么构造评测集？答：从真实 trace 采样 + 人工标注 golden answer，并把它纳入 CI 做回归。",
+      "tags": ["评估", "面试"],
+      "difficulty": 2,
+      "source": "兜底示例"
+    },
+    {
+      "id": "fallback-interview-002",
+      "type": "mcq",
+      "question": "Agent 反复调用同一个工具、始终不收敛，最应该先检查什么？",
+      "choices": [
+        "把温度调成 0",
+        "工具返回是否被正确回灌进上下文，以及是否设有终止条件",
+        "更换更大的模型",
+        "增加系统提示词长度"
+      ],
+      "answerIndex": 1,
+      "explanation": "不收敛的根因通常是「观察结果没真正回到上下文」或「没有 max steps / 失败判据」。换模型和调温度只掩盖症状。",
+      "tags": ["调试", "面试"],
+      "difficulty": 2,
+      "source": "兜底示例"
+    },
+    {
+      "id": "fallback-interview-003",
+      "type": "cloze",
+      "question": "面试官问「你的 Agent 怎么防止越权操作」，标准答法是「最小权限 + 敏感操作 {{c1::人工审批}} + 可回滚」。",
+      "answer": "要点：工具按最小权限授予；写操作要幂等并保留审计日志；高风险动作（转账、发邮件、删数据）走人工确认。",
+      "explanation": "易错点：只说「我加了 system prompt 约束」。约束要在代码/权限层落实，不能只靠模型自觉。",
+      "tags": ["安全", "面试"],
+      "difficulty": 2,
+      "source": "兜底示例"
+    }
+  ]
+}

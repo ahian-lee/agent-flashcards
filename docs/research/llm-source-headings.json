@@ -1,0 +1,944 @@
+{
+  "agent": {
+    "url": "https://notes.kamacoder.com/interview/llm/agent_interview.html",
+    "status": 200,
+    "headings": [
+      {
+        "level": 1,
+        "text": "# Agent大厂面试题汇总：ReAct、Function Calling、MCP、RAG高频问题"
+      },
+      {
+        "level": 2,
+        "text": "# 目录"
+      },
+      {
+        "level": 2,
+        "text": "# 1. LLM 和 Agent 有什么区别？"
+      },
+      {
+        "level": 3,
+        "text": "# LLM 是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# LLM 的四大天花板"
+      },
+      {
+        "level": 3,
+        "text": "# Agent 是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# 一个例子说清楚本质区别"
+      },
+      {
+        "level": 3,
+        "text": "# 面试加分点：Agent 的完整四模块"
+      },
+      {
+        "level": 2,
+        "text": "# 2. Agent 和 Workflow 有什么区别？"
+      },
+      {
+        "level": 3,
+        "text": "# 核心区别：谁在控制流程？"
+      },
+      {
+        "level": 3,
+        "text": "# Workflow 详解"
+      },
+      {
+        "level": 3,
+        "text": "# Agent 详解"
+      },
+      {
+        "level": 3,
+        "text": "# 量化对比"
+      },
+      {
+        "level": 3,
+        "text": "# 实际生产中：混合架构最常见"
+      },
+      {
+        "level": 2,
+        "text": "# 3. Agent 有哪些工作模式？"
+      },
+      {
+        "level": 3,
+        "text": "# 模式一：ReAct（推理 + 行动）"
+      },
+      {
+        "level": 4,
+        "text": "# 如何防止 ReAct 死循环？← 面试高频追问"
+      },
+      {
+        "level": 3,
+        "text": "# 模式二：Plan-and-Execute（先规划再执行）"
+      },
+      {
+        "level": 3,
+        "text": "# 模式三：Reflection（自我反思）"
+      },
+      {
+        "level": 3,
+        "text": "# 模式四：Multi-Agent（多智能体协作）"
+      },
+      {
+        "level": 2,
+        "text": "# 4. Function Call 是什么？底层怎么实现？"
+      },
+      {
+        "level": 3,
+        "text": "# Function Call 是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# Function Call 四步流程"
+      },
+      {
+        "level": 3,
+        "text": "# Parallel Function Call（并行调用）"
+      },
+      {
+        "level": 3,
+        "text": "# 各厂商格式对比"
+      },
+      {
+        "level": 2,
+        "text": "# 5. MCP 是什么协议？解决什么问题？"
+      },
+      {
+        "level": 3,
+        "text": "# MCP 解决的根本问题：N × M 爆炸"
+      },
+      {
+        "level": 3,
+        "text": "# MCP 架构详解"
+      },
+      {
+        "level": 3,
+        "text": "# MCP 提供了哪些能力？"
+      },
+      {
+        "level": 3,
+        "text": "# MCP 的工具发现机制"
+      },
+      {
+        "level": 3,
+        "text": "# MCP 安全性设计"
+      },
+      {
+        "level": 3,
+        "text": "# MCP 底层协议"
+      },
+      {
+        "level": 2,
+        "text": "# 6. Skills 是什么？和 Prompt 有什么区别？"
+      },
+      {
+        "level": 3,
+        "text": "# Skills 解决什么问题？"
+      },
+      {
+        "level": 3,
+        "text": "# Skills vs System Prompt"
+      },
+      {
+        "level": 3,
+        "text": "# 一个完整的 Skill 文件示例"
+      },
+      {
+        "level": 3,
+        "text": "# Skills 的激活机制"
+      },
+      {
+        "level": 2,
+        "text": "# 7. Function Call、MCP、Skills 三者区别与协作？"
+      },
+      {
+        "level": 3,
+        "text": "# 技术层面的三维对比"
+      },
+      {
+        "level": 3,
+        "text": "# 三者协作的完整流程"
+      },
+      {
+        "level": 2,
+        "text": "# 8. A2A 协议是什么？和 MCP 的关系？"
+      },
+      {
+        "level": 3,
+        "text": "# 为什么需要 A2A？"
+      },
+      {
+        "level": 3,
+        "text": "# A2A 核心概念"
+      },
+      {
+        "level": 3,
+        "text": "# A2A 通信流程"
+      },
+      {
+        "level": 3,
+        "text": "# MCP vs A2A：互补而非替代"
+      },
+      {
+        "level": 3,
+        "text": "# A2A 生态现状（2026年）"
+      },
+      {
+        "level": 2,
+        "text": "# 9. Agent 的记忆系统怎么设计？"
+      },
+      {
+        "level": 3,
+        "text": "# 记忆的两种层次"
+      },
+      {
+        "level": 3,
+        "text": "# 记忆压缩策略"
+      },
+      {
+        "level": 3,
+        "text": "# 记忆的读写时机"
+      },
+      {
+        "level": 2,
+        "text": "# 10. Agent 的安全与可靠性如何保障？"
+      },
+      {
+        "level": 3,
+        "text": "# 安全威胁模型"
+      },
+      {
+        "level": 3,
+        "text": "# 核心防御：最小权限 + Human in the Loop"
+      },
+      {
+        "level": 3,
+        "text": "# Prompt Injection 防御"
+      },
+      {
+        "level": 3,
+        "text": "# 可靠性设计"
+      },
+      {
+        "level": 2,
+        "text": "# 11. RAG 和 Agent 是什么关系？"
+      },
+      {
+        "level": 3,
+        "text": "# RAG 是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# RAG vs Agent"
+      },
+      {
+        "level": 3,
+        "text": "# RAG 是 Agent 的一个工具"
+      },
+      {
+        "level": 3,
+        "text": "# Agentic RAG：进阶玩法"
+      },
+      {
+        "level": 2,
+        "text": "# 12. 大厂真实面试追问汇总"
+      },
+      {
+        "level": 3,
+        "text": "# 系统设计类"
+      },
+      {
+        "level": 3,
+        "text": "# 原理深挖类"
+      },
+      {
+        "level": 3,
+        "text": "# 工程实践类"
+      },
+      {
+        "level": 2,
+        "text": "# 常见问题（FAQ）"
+      },
+      {
+        "level": 2,
+        "text": "# 写在最后"
+      },
+      {
+        "level": 3,
+        "text": "评论"
+      }
+    ]
+  },
+  "rag": {
+    "url": "https://notes.kamacoder.com/interview/llm/rag_interview.html",
+    "status": 200,
+    "headings": [
+      {
+        "level": 1,
+        "text": "# RAG大厂面试题汇总：向量检索、混合检索、Rerank、幻觉处理高频问题"
+      },
+      {
+        "level": 2,
+        "text": "# 目录"
+      },
+      {
+        "level": 2,
+        "text": "# 1. RAG 是什么？为什么需要 RAG？"
+      },
+      {
+        "level": 3,
+        "text": "# LLM 的三大知识缺陷"
+      },
+      {
+        "level": 3,
+        "text": "# RAG 的核心思路"
+      },
+      {
+        "level": 2,
+        "text": "# 2. RAG 的完整链路是怎样的？"
+      },
+      {
+        "level": 3,
+        "text": "# RAG 七步链路"
+      },
+      {
+        "level": 2,
+        "text": "# 3. 向量检索的原理是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# 向量检索的本质"
+      },
+      {
+        "level": 3,
+        "text": "# 相似度计算"
+      },
+      {
+        "level": 3,
+        "text": "# ANN 检索（近似最近邻）"
+      },
+      {
+        "level": 2,
+        "text": "# 4. 向量数据库怎么选？Milvus、FAISS、Qdrant 各自适合什么场景？"
+      },
+      {
+        "level": 3,
+        "text": "# 三者对比"
+      },
+      {
+        "level": 2,
+        "text": "# 5. 纯向量检索有什么问题？为什么需要混合检索？"
+      },
+      {
+        "level": 3,
+        "text": "# 纯向量检索的三个致命问题"
+      },
+      {
+        "level": 3,
+        "text": "# 混合检索 = 向量检索 + 关键词检索"
+      },
+      {
+        "level": 3,
+        "text": "# 合并策略：RRF（Reciprocal Rank Fusion）"
+      },
+      {
+        "level": 2,
+        "text": "# 6. Rerank 是什么？为什么检索之后还要重排序？"
+      },
+      {
+        "level": 3,
+        "text": "# 检索和 Rerank 的区别"
+      },
+      {
+        "level": 3,
+        "text": "# 为什么检索的打分不够准？"
+      },
+      {
+        "level": 3,
+        "text": "# Rerank 的效果"
+      },
+      {
+        "level": 3,
+        "text": "# 常用 Rerank 模型"
+      },
+      {
+        "level": 2,
+        "text": "# 7. Chunk 怎么切？切大了切小了各有什么问题？"
+      },
+      {
+        "level": 3,
+        "text": "# 切大了什么问题？"
+      },
+      {
+        "level": 3,
+        "text": "# 切小了什么问题？"
+      },
+      {
+        "level": 3,
+        "text": "# 三种主流 Chunk 策略"
+      },
+      {
+        "level": 3,
+        "text": "# overlap 的作用"
+      },
+      {
+        "level": 3,
+        "text": "# 不同文档类型分别怎么处理？"
+      },
+      {
+        "level": 2,
+        "text": "# 8. Embedding 模型怎么选？中文场景选什么？"
+      },
+      {
+        "level": 3,
+        "text": "# 选型维度"
+      },
+      {
+        "level": 3,
+        "text": "# 中文场景主流模型"
+      },
+      {
+        "level": 3,
+        "text": "# 维度越高越好吗？"
+      },
+      {
+        "level": 2,
+        "text": "# 9. RAG 的幻觉怎么处理？"
+      },
+      {
+        "level": 3,
+        "text": "# 幻觉的两种类型"
+      },
+      {
+        "level": 3,
+        "text": "# 六种幻觉处理策略"
+      },
+      {
+        "level": 2,
+        "text": "# 10. RAG 检索效果不好怎么优化？"
+      },
+      {
+        "level": 3,
+        "text": "# 优化思路：从链路的每一步找问题"
+      },
+      {
+        "level": 3,
+        "text": "# 四种高级优化策略"
+      },
+      {
+        "level": 2,
+        "text": "# 11. Agentic RAG 是什么？和普通 RAG 有什么区别？"
+      },
+      {
+        "level": 3,
+        "text": "# 普通 RAG 的局限"
+      },
+      {
+        "level": 3,
+        "text": "# Agentic RAG：让 RAG 自己决定怎么检索"
+      },
+      {
+        "level": 3,
+        "text": "# Agentic RAG 的工作流程"
+      },
+      {
+        "level": 2,
+        "text": "# 12. 大厂真实面试追问汇总"
+      },
+      {
+        "level": 3,
+        "text": "# 检索策略类"
+      },
+      {
+        "level": 3,
+        "text": "# 工程落地类"
+      },
+      {
+        "level": 3,
+        "text": "# 场景设计类"
+      },
+      {
+        "level": 2,
+        "text": "# 常见问题（FAQ）"
+      },
+      {
+        "level": 2,
+        "text": "# 写在最后"
+      },
+      {
+        "level": 3,
+        "text": "评论"
+      }
+    ]
+  },
+  "transformer": {
+    "url": "https://notes.kamacoder.com/interview/llm/transformer_interview.html",
+    "status": 200,
+    "headings": [
+      {
+        "level": 1,
+        "text": "# Transformer大厂面试题汇总：应用开发者视角"
+      },
+      {
+        "level": 2,
+        "text": "# 目录"
+      },
+      {
+        "level": 2,
+        "text": "# 1. 为什么应用开发也要懂 Transformer？"
+      },
+      {
+        "level": 2,
+        "text": "# 2. 为什么所有大模型都绕不开 Transformer？"
+      },
+      {
+        "level": 3,
+        "text": "# Transformer 之前：RNN 和 CNN 的困境"
+      },
+      {
+        "level": 3,
+        "text": "# Transformer 的解法：注意力机制"
+      },
+      {
+        "level": 3,
+        "text": "# 有替代方案吗？"
+      },
+      {
+        "level": 2,
+        "text": "# 3. Self-Attention：Transformer 的灵魂"
+      },
+      {
+        "level": 3,
+        "text": "# 一句话理解 Self-Attention"
+      },
+      {
+        "level": 3,
+        "text": "# Q、K、V 是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# 对应用开发的启示"
+      },
+      {
+        "level": 2,
+        "text": "# 4. Multi-Head Attention：为什么要多个头？"
+      },
+      {
+        "level": 3,
+        "text": "# 一个头的局限"
+      },
+      {
+        "level": 3,
+        "text": "# 多头的解法"
+      },
+      {
+        "level": 3,
+        "text": "# 对应用开发的启示"
+      },
+      {
+        "level": 2,
+        "text": "# 5. Positional Encoding：为什么位置信息这么重要？"
+      },
+      {
+        "level": 3,
+        "text": "# Transformer 天生没有顺序感"
+      },
+      {
+        "level": 3,
+        "text": "# 位置编码怎么加的？"
+      },
+      {
+        "level": 3,
+        "text": "# 对应用开发的启示"
+      },
+      {
+        "level": 2,
+        "text": "# 6. Encoder vs Decoder vs Decoder-Only：三大架构怎么选？"
+      },
+      {
+        "level": 3,
+        "text": "# 三大架构对比"
+      },
+      {
+        "level": 3,
+        "text": "# Encoder-Only：BERT 的路线"
+      },
+      {
+        "level": 3,
+        "text": "# Encoder-Decoder：T5 的路线"
+      },
+      {
+        "level": 3,
+        "text": "# Decoder-Only：GPT 的路线"
+      },
+      {
+        "level": 3,
+        "text": "# 对应用开发的启示"
+      },
+      {
+        "level": 2,
+        "text": "# 7. Transformer 的局限性"
+      },
+      {
+        "level": 3,
+        "text": "# 局限一：O(n²) 计算复杂度"
+      },
+      {
+        "level": 3,
+        "text": "# 局限二：位置编码的外推问题"
+      },
+      {
+        "level": 3,
+        "text": "# 局限三：中间迷失（Lost in the Middle）"
+      },
+      {
+        "level": 3,
+        "text": "# 局限四：生成是串行的"
+      },
+      {
+        "level": 2,
+        "text": "# 8. 面试高频问题汇总"
+      },
+      {
+        "level": 3,
+        "text": "# 概念类"
+      },
+      {
+        "level": 3,
+        "text": "# 架构类"
+      },
+      {
+        "level": 3,
+        "text": "# 应用类"
+      },
+      {
+        "level": 2,
+        "text": "# 写在最后"
+      },
+      {
+        "level": 3,
+        "text": "评论"
+      }
+    ]
+  },
+  "finetuning": {
+    "url": "https://notes.kamacoder.com/interview/llm/finetuning_sft_rlhf_interview.html",
+    "status": 200,
+    "headings": [
+      {
+        "level": 1,
+        "text": "# 大模型微调面试怎么答？SFT、RLHF、DPO、PPO 到底还有没有必要？"
+      },
+      {
+        "level": 2,
+        "text": "# 目录"
+      },
+      {
+        "level": 2,
+        "text": "# 一、先说结论：微调没有消失，只是价值变了"
+      },
+      {
+        "level": 2,
+        "text": "# 二、先把名词讲清楚：SFT、RLHF、RL、PPO、DPO 是什么"
+      },
+      {
+        "level": 3,
+        "text": "# 1. SFT：监督微调"
+      },
+      {
+        "level": 3,
+        "text": "# 2. RLHF：基于人类反馈的强化学习"
+      },
+      {
+        "level": 3,
+        "text": "# 3. RL：强化学习"
+      },
+      {
+        "level": 3,
+        "text": "# 4. PPO：一种常见的 RL 优化算法"
+      },
+      {
+        "level": 3,
+        "text": "# 5. DPO：直接偏好优化"
+      },
+      {
+        "level": 2,
+        "text": "# 三、微调、Prompt、RAG 到底怎么选"
+      },
+      {
+        "level": 3,
+        "text": "# 1. 能靠 Prompt 解决，就先别训练"
+      },
+      {
+        "level": 3,
+        "text": "# 2. 知识频繁变化，优先 RAG 或工具"
+      },
+      {
+        "level": 3,
+        "text": "# 3. 行为稳定性不够，再考虑 SFT"
+      },
+      {
+        "level": 3,
+        "text": "# 4. 多个答案都能用，但你有明确偏好，考虑 DPO / RLHF"
+      },
+      {
+        "level": 3,
+        "text": "# 5. 有可验证 reward，才考虑更强的 RL"
+      },
+      {
+        "level": 2,
+        "text": "# 四、为什么很多垂类微调会被基模抹平"
+      },
+      {
+        "level": 3,
+        "text": "# 1. 只补通用知识的微调，容易被抹平"
+      },
+      {
+        "level": 3,
+        "text": "# 2. 只调风格但没有评测，也容易被抹平"
+      },
+      {
+        "level": 3,
+        "text": "# 3. 数据质量低的 SFT，甚至会拖累模型"
+      },
+      {
+        "level": 3,
+        "text": "# 4. 没有业务闭环的 RL，也容易变成样子工程"
+      },
+      {
+        "level": 2,
+        "text": "# 五、SFT 的破局点：从补知识变成控行为"
+      },
+      {
+        "level": 3,
+        "text": "# 1. 固定输出格式"
+      },
+      {
+        "level": 3,
+        "text": "# 2. 固定业务流程"
+      },
+      {
+        "level": 3,
+        "text": "# 3. 行业话术和品牌口径"
+      },
+      {
+        "level": 3,
+        "text": "# 4. 小模型降本"
+      },
+      {
+        "level": 2,
+        "text": "# 六、RLHF / RL 的破局点：从变聪明变成控偏好和控决策"
+      },
+      {
+        "level": 3,
+        "text": "# 1. RLHF 的价值是对齐偏好"
+      },
+      {
+        "level": 3,
+        "text": "# 2. RL 的价值是优化多步决策"
+      },
+      {
+        "level": 3,
+        "text": "# 3. 有明确 reward 的任务，RL 更有价值"
+      },
+      {
+        "level": 3,
+        "text": "# 4. 高风险场景，RLHF/RL 还要配合规则"
+      },
+      {
+        "level": 2,
+        "text": "# 七、DPO 为什么现在经常被提到"
+      },
+      {
+        "level": 2,
+        "text": "# 八、什么场景不建议做微调"
+      },
+      {
+        "level": 3,
+        "text": "# 1. Prompt 能解决的，不要急着训练"
+      },
+      {
+        "level": 3,
+        "text": "# 2. 知识更新频繁的，不要硬塞进模型"
+      },
+      {
+        "level": 3,
+        "text": "# 3. 没有评测集的，不要盲目微调"
+      },
+      {
+        "level": 3,
+        "text": "# 4. 数据质量差的，不要直接训"
+      },
+      {
+        "level": 3,
+        "text": "# 5. 业务变化很快的，不要重仓微调"
+      },
+      {
+        "level": 2,
+        "text": "# 九、工程上怎么判断微调有没有收益"
+      },
+      {
+        "level": 3,
+        "text": "# 1. 任务指标"
+      },
+      {
+        "level": 3,
+        "text": "# 2. 质量指标"
+      },
+      {
+        "level": 3,
+        "text": "# 3. 成本指标"
+      },
+      {
+        "level": 3,
+        "text": "# 4. 风险指标"
+      },
+      {
+        "level": 3,
+        "text": "# 5. 回归测试"
+      },
+      {
+        "level": 2,
+        "text": "# 十、面试官可能怎么追问"
+      },
+      {
+        "level": 3,
+        "text": "# 1. SFT 和 RAG 怎么选？"
+      },
+      {
+        "level": 3,
+        "text": "# 2. SFT 和 Prompt Engineering 怎么选？"
+      },
+      {
+        "level": 3,
+        "text": "# 3. SFT 和 RLHF 有什么区别？"
+      },
+      {
+        "level": 3,
+        "text": "# 4. DPO 和 RLHF 有什么区别？"
+      },
+      {
+        "level": 3,
+        "text": "# 5. PPO 是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# 6. 为什么垂类微调容易失败？"
+      },
+      {
+        "level": 3,
+        "text": "# 7. Agent 场景里 RL 有什么价值？"
+      },
+      {
+        "level": 3,
+        "text": "# 8. 微调后怎么上线？"
+      },
+      {
+        "level": 2,
+        "text": "# 十一、面试怎么答"
+      },
+      {
+        "level": 3,
+        "text": "评论"
+      }
+    ]
+  },
+  "vibecoding": {
+    "url": "https://notes.kamacoder.com/interview/llm/vibe_coding_interview.html",
+    "status": 200,
+    "headings": [
+      {
+        "level": 1,
+        "text": "# Vibe Coding大厂面试题汇总：AI编程时代你的优势到底在哪"
+      },
+      {
+        "level": 2,
+        "text": "# 目录"
+      },
+      {
+        "level": 2,
+        "text": "# 1. Vibe Coding 到底是什么？"
+      },
+      {
+        "level": 2,
+        "text": "# 2. AI 越来越强，你的优势到底是什么？"
+      },
+      {
+        "level": 3,
+        "text": "# 优势一：问题定义能力"
+      },
+      {
+        "level": 3,
+        "text": "# 优势二：上下文构建能力"
+      },
+      {
+        "level": 3,
+        "text": "# 优势三：结果验证能力"
+      },
+      {
+        "level": 3,
+        "text": "# 优势四：技术决策能力"
+      },
+      {
+        "level": 3,
+        "text": "# 优势五：成本控制能力"
+      },
+      {
+        "level": 3,
+        "text": "# 五大优势总结"
+      },
+      {
+        "level": 2,
+        "text": "# 3. AI 编程工具的 Token 成本怎么控制？"
+      },
+      {
+        "level": 3,
+        "text": "# 策略一：模型路由——什么活用什么模型"
+      },
+      {
+        "level": 3,
+        "text": "# 策略二：上下文管理——别把整个代码库塞进去"
+      },
+      {
+        "level": 3,
+        "text": "# 策略三：Prompt 优化——一次说清楚，别来回改"
+      },
+      {
+        "level": 3,
+        "text": "# 策略四：缓存和复用"
+      },
+      {
+        "level": 3,
+        "text": "# 策略五：评估——哪些任务让 AI 做更贵"
+      },
+      {
+        "level": 3,
+        "text": "# Token 成本控制总结"
+      },
+      {
+        "level": 2,
+        "text": "# 4. 面试高频问题汇总"
+      },
+      {
+        "level": 3,
+        "text": "# 场景类"
+      },
+      {
+        "level": 3,
+        "text": "# 工程落地类"
+      },
+      {
+        "level": 2,
+        "text": "# 写在最后"
+      },
+      {
+        "level": 3,
+        "text": "评论"
+      }
+    ]
+  }
+}

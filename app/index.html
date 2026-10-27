@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Agent 闪卡 · 像背单词一样学 Agent</title>
+    <meta name="description" content="移动优先的 Agent 知识闪卡应用：FSRS 间隔重复、可安装、可离线，进度只保存在本机。" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!-- iOS standalone / home screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Agent闪卡" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+
+    <script>
+      // Apply the stored theme before first paint to avoid a flash of the wrong theme.
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('agent-flashcards:theme') || 'auto'
+          var dark =
+            stored === 'dark' ||
+            (stored === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          var root = document.documentElement
+          root.dataset.theme = dark ? 'dark' : 'light'
+          root.style.colorScheme = dark ? 'dark' : 'light'
+        } catch (error) {
+          /* localStorage unavailable: CSS defaults apply */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>本应用需要启用 JavaScript 才能运行。</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

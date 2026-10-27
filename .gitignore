@@ -1,0 +1,13 @@
+# dependencies and build output
+app/node_modules/
+app/dist/
+
+# test artifacts
+app/.smoke/
+.playwright-cli/
+.lead/
+
+# logs and OS files
+*.log
+.DS_Store
+Thumbs.db

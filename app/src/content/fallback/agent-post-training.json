@@ -1,0 +1,44 @@
+{
+  "id": "agent-post-training",
+  "title": "Agent 后训练知识",
+  "description": "内置兜底内容：SFT / RLHF 的核心流程。运行 npm run sync:content 后会替换为完整题库。",
+  "version": 1,
+  "cards": [
+    {
+      "id": "fallback-posttrain-001",
+      "type": "qa",
+      "question": "SFT 与 RLHF 分别解决什么问题？",
+      "answer": "- **SFT**：用「输入 → 期望输出」的示范数据做监督微调，让模型学会任务格式与基本行为。\n- **RLHF**：先训练奖励模型拟合人类偏好，再用强化学习优化策略，让模型在「没有唯一标准答案」的场景里对齐偏好。\n\n一句话：SFT 教「怎么说」，RLHF 调「说什么更好」。",
+      "explanation": "易错点：以为 RLHF 一定优于 SFT。偏好数据贵且不稳，很多场景 SFT + 拒绝采样就够了。",
+      "tags": ["SFT", "RLHF"],
+      "difficulty": 2,
+      "source": "兜底示例"
+    },
+    {
+      "id": "fallback-posttrain-002",
+      "type": "mcq",
+      "question": "RLHF 三阶段中，奖励模型的作用是？",
+      "choices": [
+        "直接生成最终回答",
+        "给策略模型的回答打一个可自动计算的偏好分数",
+        "压缩模型参数",
+        "做检索增强"
+      ],
+      "answerIndex": 1,
+      "explanation": "奖励模型把「人类偏好」蒸馏成一个可批量计算的打分器，这样 RL 训练时就不用人类实时标注。",
+      "tags": ["RLHF"],
+      "difficulty": 2,
+      "source": "兜底示例"
+    },
+    {
+      "id": "fallback-posttrain-003",
+      "type": "cloze",
+      "question": "RLHF 的典型流程是：{{c1::SFT}} → 训练奖励模型 → 用 {{c2::PPO}} 等算法优化策略。",
+      "answer": "顺序不能乱：奖励模型要在 SFT 模型产生的分布上训练，否则偏好打分与策略实际输出不匹配。",
+      "explanation": "易错点：跳过 SFT 直接做 RLHF，策略分布离奖励模型训练分布太远，训练极不稳定。",
+      "tags": ["RLHF"],
+      "difficulty": 2,
+      "source": "兜底示例"
+    }
+  ]
+}

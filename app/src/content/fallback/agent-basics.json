@@ -1,0 +1,39 @@
+{
+  "id": "agent-basics",
+  "title": "Agent 基础知识",
+  "description": "内置兜底内容：Agent loop、ReAct、工具调用的最小知识。运行 npm run sync:content 后会替换为完整题库。",
+  "version": 1,
+  "cards": [
+    {
+      "id": "fallback-basics-001",
+      "type": "qa",
+      "question": "Agent 与固定 workflow 的本质区别是什么？",
+      "answer": "**路径由谁决定**：\n\n- Workflow：LLM 与工具沿预定义的代码路径执行。\n- Agent：LLM 自己决定调用哪些工具、按什么顺序执行，并从环境的反馈中动态调整。\n\n工程上的判断法是：路径能不能提前写死？能写死就优先写死（更可控、更便宜、更好测）。",
+      "explanation": "易错点：把所有「调用过 LLM 的系统」都叫 Agent。更严格的定义要求模型自主决策 + 调用工具 + 接收环境反馈。",
+      "tags": ["基础概念"],
+      "difficulty": 1,
+      "source": "兜底示例"
+    },
+    {
+      "id": "fallback-basics-002",
+      "type": "mcq",
+      "question": "ReAct 单步循环里，紧跟在 Action 之后的是？",
+      "choices": ["Final Answer", "Observation", "Thought", "Reward"],
+      "answerIndex": 1,
+      "explanation": "ReAct 的顺序是 Thought（推理）→ Action（调工具）→ Observation（工具返回），三者交错出现，观察结果会纠正后续推理。",
+      "tags": ["ReAct"],
+      "difficulty": 1,
+      "source": "兜底示例"
+    },
+    {
+      "id": "fallback-basics-003",
+      "type": "cloze",
+      "question": "生产环境里防止 Agent 无限循环，最常见的做法是设置最大 {{c1::步数}} 与 token 预算。",
+      "answer": "最大步数（MAX_STEPS）与预算上限是必须的护栏：超限时应当终止循环并返回已经获得的信息，而不是继续重试。",
+      "explanation": "易错点：只靠 prompt 让模型「不要重复」，模型并不保证遵守；终止条件要落在代码里。",
+      "tags": ["护栏"],
+      "difficulty": 1,
+      "source": "兜底示例"
+    }
+  ]
+}
